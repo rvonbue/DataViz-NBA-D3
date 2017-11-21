@@ -1,5 +1,6 @@
 import eventController from "./controllers/eventController";
 import template from "./appView.html";
+import StatsView1 from "./StatsView1";
 
 let AppView3d = Backbone.View.extend({
   className: "appView",
@@ -7,6 +8,7 @@ let AppView3d = Backbone.View.extend({
   addListeners: function () { },
   attachedToDOM: function () {
     console.log("AttachedToTheDOM");
+    new StatsView1();
   },
   getWidthHeight: function () {
     return {w: this.$el.width(), h: this.$el.height() };
