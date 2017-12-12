@@ -1,6 +1,6 @@
 import eventController from "./controllers/eventController";
 import template from "./appView.html";
-import StatsView1 from "./StatsView1";
+import StatsView1 from "./views/StatView1";
 
 let AppView3d = Backbone.View.extend({
   className: "appView",
@@ -18,6 +18,7 @@ let AppView3d = Backbone.View.extend({
   },
   render: function () {
     this.$el.append(template);
+    this.$el.append(new StatsView1().render().el);
     return this;
   }
 });
