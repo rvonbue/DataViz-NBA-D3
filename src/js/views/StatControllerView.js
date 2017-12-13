@@ -26,7 +26,7 @@ let StatControllerView = Backbone.View.extend({
   sortPlayerStats: function (dataDump) {
     let objKey = _.keys(dataDump);  // data dump return POJO with one value an array
     let sorted3pa = _.sortBy(dataDump[objKey], "fg3aRank");
-    sorted3pa.length = 30;  // get top 30 players
+    sorted3pa.length = 50  // get top 30 players
     this.loadChart(this.getSimpleData(sorted3pa));
   },
   loadChart: function (simpleData) {
