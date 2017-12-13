@@ -1,147 +1,151 @@
 import eventController from "../controllers/eventController";
 import commandController from "../controllers/commandController";
 import * as d3 from "d3";
+import d3tip from "d3-tip";
+import d3zoom from "d3-zoom";
+import util from "../util";
+import ScatterPlotTemplate from "./ScatterPlot.html";
+import BaseChart from "./BaseChart";
 
-window.d3 = d3;
-
-let ScatterPlot = Backbone.View.extend({
+let ScatterPlot = BaseChart.extend({
   initialize: function (options) {
     this.data = options.data;
     this.parentEl = options.parentEl;
-    this.margin = {top: 20, right: 20, bottom: 50, left: 50};
-    var throttled = _.debounce(this.resizeScatterPlot, 200);
+    this.margin = {top: 20, right: 20, bottom: 50, left: 50, textTop: 15};
+
+    var throttled = _.debounce(this.resizeChart, 200);
 
     $( window ).resize(_.bind(throttled, this));
     let size = this.setSize();
     this.createSvg(size);
-    this.buildScatterPlot(options.data, size);
+    this.buildChart(options.data, size);
   },
   setSize: function () {
     this.size = commandController.request(commandController.GET_SCREEN_SIZE);
     return this.size;
   },
-  resizeScatterPlot: function () {
+  resizeChart: function () {
     this.setSize();
 
     this.svg
-    .selectAll("g, text")
-    .data([])
-    .exit().remove()
-    .attr("width", this.size.w)
-    .attr("height", this.size.h);
-
-    this.buildScatterPlot();
-  },
-  buildScatterPlot: function () {
-    // console.log("simpleData", simpleData);
-    let r = 10;
-    var elem = this.svg.selectAll("g myCircleText")
-       .data(this.data);
-
-
-    let viewScaleX = this.getScaleX(this.data, this.size);
-    let viewScaleY = this.getScaleY(this.data, this.size);
-
-    this.addAxesX(this.size, viewScaleX);
-    this.addAxesY(this.size, viewScaleY);
-
-    let elemEnter = elem.enter()
-	    .append("g");
-
-
-    var circleInner = elemEnter.append("circle")
-      .attr("r", 0 )
-      .attr("stroke", "#000000")
-      .style("stroke-width",0)
-      .attr("cx", function (d, i) { return viewScaleX(d.fg3Pct)})
-      .attr("cy", function (d, i) { return viewScaleY(d.fG3M)})
-      .attr("fill", "#00FF00")
-      .attr("opacity", 1)
-      .transition()
-      .duration(function (d) {
-        let viewSX = viewScaleX(d.fg3Pct) * 2;
-        let duration = _.max([viewSX, 1000]);
-        duration =  _.min([3000,viewSX]);
-        return duration;
-      })
-      .attr("r", r)
-      .style("fill","#ff6600")
-      .style("stroke-width", 1);
-    // elemEnter.append("text")
-    //   .text(function(d){ return d.fg3Pct })
-    //   .attr("text-anchor", "middle")
-    //   .attr("font-size", "10")
-    //   .attr("dx", function (d, i) {  return viewScaleX(d.fg3Pct)})
-    //   .attr("dy", function (d, i) { return viewScaleY(d.fg3PctRank)});
-
-  },
-  getScaleX: function (simpleData, size) {
-    let xMax = _.max(simpleData, function(d){ return d.fg3Pct; });
-    let xMin = _.min(simpleData, function(d){ return d.fg3Pct; });
-    return d3.scaleLinear().domain([ xMin.fg3Pct * 0.95 , xMax.fg3Pct * 1.1 ]).range([ this.margin.left, this.size.w - this.margin.right ]);
-  },
-  getScaleY: function (simpleData, size) {
-    let xMax = _.max(simpleData, function(d){ return d.fG3M; });
-    let xMin = _.min(simpleData, function(d){ return d.fG3M; });
-    return d3.scaleLinear().domain([ xMax.fG3M * 1.1, xMin.fG3M * 0.90 ]).range([ this.margin.top, this.size.h - this.margin.bottom ]);
-  },
-  addAxesX: function (size, x) {
-
-    this.addFadeIn(
-      this.svg.append("g")
-        .attr("transform", "translate(0," + (size.h - this.margin.bottom) + ")")
-        .call(d3.axisBottom(x))
-    );
-
-
-    // text label for the x axis
-    this.addFadeIn(
-      this.svg.append("text")
-        .attr("transform",
-              "translate(" + (size.w / 2) + " ," +
-                             (size.h - 15)  + ")")
-        .style("text-anchor", "middle")
-        .text("3-Point Percentage")
-    );
-  },
-  addAxesY: function (size, y) {
-
-    this.addFadeIn(   // Add the y Axis
-      this.svg.append("g")
-      .attr("transform", "translate(" + this.margin.left + "," + 0 + ")")
-      .call(d3.axisLeft(y))
-    );
-
-    this.addFadeIn(   // text label for the y axis
-      this.svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0 - this.margin.left + 50)
-        .attr("x",0 - (size.h / 2))
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text("3-Pointers Made")
-    );
-
-  },
-  addFadeIn: function (d3Obj) {
-
-    d3Obj.attr("opacity", 0)
-      .transition()
-      .duration(function () {
-        return 1500;
-      })
-      .attr("opacity", 1);
-  },
-  createSvg: function () {
-
-    this.svg = d3.select(this.parentEl[0])
-      .append("svg")
+      .selectAll("g, text")
+      .data([])
+      .exit().remove()
       .attr("width", this.size.w)
       .attr("height", this.size.h);
+
+    this.buildChart();
   },
-  render: function () {
-    // this.$el.append(template);
-    return this;
+  buildChart: function () {
+    // console.log("simpleData", simpleData);
+
+    let elemEnter = this.svg.selectAll("g")
+       .data(this.data)
+       .enter().append("g");
+
+    this.viewScaleX = this.getScaleX(this.data, "fg3Pct");
+    this.viewScaleY = this.getScaleY(this.data, "fG3M");
+
+    this.addAxesX(this.size, "3-Point Percentage");
+    this.addAxesY(this.size, "3-Pointers Made");
+    this.addToolTip();
+    this.addZoom();
+    this.addShapeSVG(elemEnter, this.viewScaleX, this.viewScaleY);
+    this.addTextSVG(elemEnter);
+  },
+  addShapeSVG: function (elemEnter) {
+    let r = 10;
+    let self = this;
+
+    elemEnter.append("circle")
+      .attr("r", 0 )
+      .attr("stroke", "#000000")
+      .attr("class", "circleH")
+      .style("stroke-width",0)
+      .each((d) => { d.initPos = {x: self.viewScaleX(d.fg3Pct), y: self.viewScaleY(d.fG3M)}; })
+      .attr("transform", (d) => { return self.getTranslation( 0, d.initPos.y ); })
+      .attr("fill", "#00FF00")
+      .attr("opacity", 1)
+      .call(this.getDragBehavior())
+      .on('mouseover', this.tip.show)
+      .on('mouseout', this.tip.hide)
+      .transition()
+      .duration( (d) => { return self.getAnimationDuration(self.viewScaleX(d.fg3Pct) * 2); })
+      .attr("r", r)
+      .attr("transform", (d) => { return  self.getTranslation( d.initPos.x, d.initPos.y ); })
+      .style("fill","#ff6600")
+      .style("stroke-width", 1);
+
+  },
+  addTextSVG: function (elemEnter) {
+    let self = this;
+
+    elemEnter.append("text")
+      .text(function(d){ return d.playerName.split(" ")[1] }) // Last Name
+      .attr("text-anchor", "middle").attr("font-size", "12").attr("opacity", 0)
+      .attr("transform", function (d) {
+        return self.getTranslation( self.viewScaleX(d.fg3Pct), self.viewScaleY(d.fG3M) - self.margin.textTop );
+      })
+      .transition()
+      .delay((d) => { return self.getAnimationDuration(self.viewScaleX(d.fg3Pct) * 2); })
+      .duration( (d) => { return 500; })
+      .attr("opacity", 1)
+
+  },
+  addToolTip: function () {
+    if (this.tip) return;
+
+    this.tip = d3tip()
+      .attr('class', 'd3-tip')
+      .html(function(d) { return ScatterPlotTemplate(d) })
+      .offset([-5, 0]);
+
+    this.svg.call(this.tip);
+  },
+  addZoom: function () {
+    let zoom = d3.zoom()
+        .scaleExtent([1, 40])
+        .translateExtent([[-100, -100], [this.size.w + 90, this.size.h + 100]])
+        .on("zoom", _.bind(this.zoomed, this));
+    this.svg.call(zoom);
+  },
+  zoomed: function () {
+    console.log("Zoomed");
+    this.svg.selectAll("g").attr("transform", d3.event.transform);
+    // gX.call(xAxis.scale(d3.event.transform.rescaleX(x)));
+    // gY.call(yAxis.scale(d3.event.transform.rescaleY(y)));
+  },
+  getDragBehavior: function () {
+    return d3.drag()
+             .on('start', this.onDragStart)
+             .on('drag', this.onDrag)
+             .on('end', this.onDragEnd);
+  },
+  onDragStart: function () {
+    d3.select(this).raise();
+    $("body").addClass("hide-tooltip");
+  },
+  onDrag: function (shape) {
+    var dx = d3.event.sourceEvent.offsetX,
+        dy = d3.event.sourceEvent.offsetY;
+
+    d3.select(this)
+      .attr("transform", function (d) {
+        return  "translate(" + dx + " ," + dy  + ")";
+      });
+  },
+  onDragEnd: function () {
+    d3.select(this)
+      .transition()
+      .ease(d3.easeElasticOut)
+      .attr("transform", function (d) {
+        return  "translate(" + d.initPos.x + " ," + d.initPos.y + ")";
+      });
+
+    _.delay(function () {
+      $("body").removeClass("hide-tooltip");
+    }, 500);
+
   }
 });
 
