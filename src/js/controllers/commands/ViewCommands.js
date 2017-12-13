@@ -1,3 +1,3 @@
 module.exports = {
-  VIEW_COMMAND: "VIEW_COMMAND",
+  GET_SCREEN_SIZE: "GET_SCREEN_SIZE",
 };

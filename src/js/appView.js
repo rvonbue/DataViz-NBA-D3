@@ -1,24 +1,21 @@
 import eventController from "./controllers/eventController";
 import template from "./appView.html";
-import StatsView1 from "./views/StatView1";
+import StatControllerView from "./views/StatControllerView";
 
 let AppView3d = Backbone.View.extend({
-  className: "appView",
-  initialize: function (options) { },
+  id: "appView",
+  initialize: function (options) {
+  },
   addListeners: function () { },
   attachedToDOM: function () {
-    console.log("AttachedToTheDOM");
-    new StatsView1();
-  },
-  getWidthHeight: function () {
-    return {w: this.$el.width(), h: this.$el.height() };
+    // console.log("AttachedToTheDOM");
   },
   resize: function () {
     let size = this.getWidthHeight();
   },
   render: function () {
     this.$el.append(template);
-    this.$el.append(new StatsView1().render().el);
+    this.$el.append(new StatControllerView().render().el);
     return this;
   }
 });
