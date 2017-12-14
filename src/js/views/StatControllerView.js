@@ -1,11 +1,10 @@
 import eventController from "../controllers/eventController";
 import commandController from "../controllers/commandController";
 const NBA = require("nba");
-import template from "./StatView1.html";
 import ScatterPlot from "./ScatterPlot";
+import Sunburst from "./Sunburst";
 
 window.NBA = NBA;
-
 
 let StatControllerView = Backbone.View.extend({
   id: "stat-view",
@@ -34,12 +33,13 @@ let StatControllerView = Backbone.View.extend({
       if ( d.gpRank > 300 ) sorted3pa.splice(i, 1);  // remove players who don't play alot of games
     });
     sorted3pa.length = 50;  // get top 30 players
-    console.log("sorted3pa", sorted3pa);
+    // console.log("sorted3pa", sorted3pa);
     this.loadChart(this.getSimpleData(sorted3pa));
   },
   loadChart: function (simpleData) {
     // this.$el.append(template(sorted3pa[0]));
-    new ScatterPlot({ data: simpleData, parentEl: this.$el });
+    // new ScatterPlot({ data: simpleData, parentEl: this.$el });
+    new Sunburst({ parentEl: this.$el });
   },
   getSimpleData: function (sorted3pa) {
     let simpleData = [];

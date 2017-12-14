@@ -4,30 +4,19 @@ import * as d3 from "d3";
 import d3tip from "d3-tip";
 import d3zoom from "d3-zoom";
 import util from "../util";
-import ScatterPlotTemplate from "./ScatterPlot.html";
 window.d3 = d3;
 window.util = util;
 
 let BaseChart = Backbone.View.extend({
-  initialize: function (options) {
-    this.data = options.data;
-    this.parentEl = options.parentEl;
-    this.margin = {top: 20, right: 20, bottom: 50, left: 50, textTop: 15};
-
-    var throttled = _.debounce(this.resizeChart, 200);
-
-    $( window ).resize(_.bind(throttled, this));
-    let size = this.setSize();
-    this.createSvg(size);
-    this.buildChart(options.data, size);
+  initialize: function (options) { },
+  addListeners: function () {
+    $( window ).resize(_.bind( _.debounce(this.resizeChart, 200), this));
   },
   setSize: function () {
-    this.size = commandController.request(commandController.GET_SCREEN_SIZE);
-    return this.size;
+    return commandController.request(commandController.GET_SCREEN_SIZE);
   },
   resizeChart: function () {
     this.setSize();
-
     this.svg
       .selectAll("g, text")
       .data([])
@@ -35,25 +24,9 @@ let BaseChart = Backbone.View.extend({
       .attr("width", this.size.w)
       .attr("height", this.size.h);
 
-    this.buildScatterPlot();
+    this.buildChart();
   },
-  buildChart: function () {
-    // // console.log("simpleData", simpleData);
-    //
-    // let elemEnter = this.svg.selectAll("g")
-    //    .data(this.data)
-    //    .enter().append("g");
-    //
-    // this.viewScaleX = this.getScaleX(this.data, this.size);
-    // this.viewScaleY = this.getScaleY(this.data, this.size);
-    //
-    // this.addAxesX(this.size);
-    // this.addAxesY(this.size);
-    // this.addToolTip();
-    // this.addZoom();
-    // this.addShapeSVG(elemEnter, this.viewScaleX, this.viewScaleY);
-    // this.addTextSVG(elemEnter);
-  },
+  buildChart: function () { },
   getAnimationDuration: function (viewScale) {
     let duration = _.max([viewScale, 1000]);
     return _.min([3000,viewScale]);
@@ -63,18 +36,14 @@ let BaseChart = Backbone.View.extend({
   },
   addZoom: function () {
     let zoom = d3.zoom()
-        .scaleExtent([1, 40])
+        .scaleExtent([1, 5])
         .translateExtent([[-100, -100], [this.size.w + 90, this.size.h + 100]])
         .on("zoom", _.bind(this.zoomed, this));
     this.svg.call(zoom);
   },
   zoomed: function () {
-    console.log("Zoomed");
     this.svg.selectAll("g").attr("transform", d3.event.transform);
-    // gX.call(xAxis.scale(d3.event.transform.rescaleX(x)));
-    // gY.call(yAxis.scale(d3.event.transform.rescaleY(y)));
   },
-
   getScaleX: function (simpleData, propKey) {
     let xMax = _.max(simpleData, function(d){ return d[propKey]; });
     let xMin = _.min(simpleData, function(d){ return d[propKey]; });
@@ -87,49 +56,44 @@ let BaseChart = Backbone.View.extend({
   },
   getDragBehavior: function () {
     return d3.drag()
-             .on('start', this.onDragStart)
-             .on('drag', this.onDrag)
-             .on('end', this.onDragEnd);
+       .on('start', this.onDragStart)
+       .on('drag', this.onDrag)
+       .on('end', this.onDragEnd);
   },
   onDragStart: function () {},
   onDrag: function () {},
   onDragEnd: function () { },
-  addAxesX: function (size, label) {
+  addAxesX: function () {
+    let axisGX = this.svg.append("g")
+        .attr("class", "axisX")
+        .attr("fill", "#FFFFFF")
+        .attr("transform", "translate(0," + (this.size.h - this.margin.bottom) + ")");
 
-    this.addFadeIn(
-      this.svg.append("g")
-        .attr("transform", "translate(0," + (size.h - this.margin.bottom) + ")")
-        .call(d3.axisBottom(this.viewScaleX))
-    );
+    axisGX
+        .append("rect")
+        .attr("width", this.size.w)
+        .attr("height", this.margin.bottom)
+        .attr("fill", "#FFFFFF");
 
-    // text label for the x axis
-    this.addFadeIn(
-      this.svg.append("text")
-        .attr("transform",
-              "translate(" + (size.w / 2) + " ," +
-                             (size.h - 15)  + ")")
-        .style("text-anchor", "middle")
-        .text(label)
-    );
+    this.axisX = d3.axisBottom(this.viewScaleX);
+    axisGX.call(this.axisX);
+
+    this.addFadeIn(axisGX);
   },
-  addAxesY: function (size, label) {
+  addAxesY: function (label) {
+    let axisGY = this.svg.append("g")
+      .attr("class", "axisY")
+      .attr("transform", "translate(" + this.margin.left + "," + 0 + ")");
 
-    this.addFadeIn(   // Add the y Axis
-      this.svg.append("g")
-      .attr("transform", "translate(" + this.margin.left + "," + 0 + ")")
-      .call(d3.axisLeft(this.viewScaleY))
-    );
+    axisGY.append("rect")
+      .attr("width", this.margin.left)
+      .attr("height", this.size.h)
+      .attr("x", -this.margin.left )
+      .attr("fill", "#FFFFFF");
 
-    this.addFadeIn(   // text label for the y axis
-      this.svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0 - this.margin.left + 50)
-        .attr("x",0 - (this.size.h / 2))
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text(label)
-    );
-
+    this.axisY = d3.axisLeft(this.viewScaleY)
+    axisGY.call(this.axisY);
+    this.addFadeIn(axisGY);
   },
   addFadeIn: function (d3Obj) {
     d3Obj.attr("opacity", 0)
@@ -137,7 +101,7 @@ let BaseChart = Backbone.View.extend({
       .duration(function () {
         return 1500;
       })
-      .attr("opacity", 1);
+     .attr("opacity", 1);
   },
   createSvg: function () {
     this.svg = d3.select(this.parentEl[0])

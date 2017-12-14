@@ -11,29 +11,11 @@ let ScatterPlot = BaseChart.extend({
   initialize: function (options) {
     this.data = options.data;
     this.parentEl = options.parentEl;
-    this.margin = {top: 20, right: 20, bottom: 50, left: 50, textTop: 15};
-
-    var throttled = _.debounce(this.resizeChart, 200);
-
-    $( window ).resize(_.bind(throttled, this));
-    let size = this.setSize();
-    this.createSvg(size);
-    this.buildChart(options.data, size);
-  },
-  setSize: function () {
-    this.size = commandController.request(commandController.GET_SCREEN_SIZE);
-    return this.size;
-  },
-  resizeChart: function () {
-    this.setSize();
-
-    this.svg
-      .selectAll("g, text")
-      .data([])
-      .exit().remove()
-      .attr("width", this.size.w)
-      .attr("height", this.size.h);
-
+    this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15};
+    this.size = this.setSize();
+    console.log("SIZE:", this.size);
+    this.addListeners();
+    this.createSvg();
     this.buildChart();
   },
   buildChart: function () {
@@ -41,13 +23,14 @@ let ScatterPlot = BaseChart.extend({
 
     let elemEnter = this.svg.selectAll("g")
        .data(this.data)
-       .enter().append("g");
+       .enter().append("g")
+       .attr("class", "chartPoints");
 
     this.viewScaleX = this.getScaleX(this.data, "fg3Pct");
     this.viewScaleY = this.getScaleY(this.data, "fG3M");
 
-    this.addAxesX(this.size, "3-Point Percentage");
-    this.addAxesY(this.size, "3-Pointers Made");
+    this.addAxesX("3-Point Percentage");
+    this.addAxesY("3-Pointers Made");
     this.addToolTip();
     this.addZoom();
     this.addShapeSVG(elemEnter, this.viewScaleX, this.viewScaleY);
@@ -57,7 +40,7 @@ let ScatterPlot = BaseChart.extend({
     let r = 10;
     let self = this;
 
-    elemEnter.append("circle")
+    let circle = elemEnter.append("circle")
       .attr("r", 0 )
       .attr("stroke", "#000000")
       .attr("class", "circleH")
@@ -68,7 +51,9 @@ let ScatterPlot = BaseChart.extend({
       .attr("opacity", 1)
       .call(this.getDragBehavior())
       .on('mouseover', this.tip.show)
-      .on('mouseout', this.tip.hide)
+      .on('mouseout', this.tip.hide);
+
+    circle
       .transition()
       .duration( (d) => { return self.getAnimationDuration(self.viewScaleX(d.fg3Pct) * 2); })
       .attr("r", r)
@@ -89,7 +74,7 @@ let ScatterPlot = BaseChart.extend({
       .transition()
       .delay((d) => { return self.getAnimationDuration(self.viewScaleX(d.fg3Pct) * 2); })
       .duration( (d) => { return 500; })
-      .attr("opacity", 1)
+      .attr("opacity", 1);
 
   },
   addToolTip: function () {
@@ -103,36 +88,29 @@ let ScatterPlot = BaseChart.extend({
     this.svg.call(this.tip);
   },
   addZoom: function () {
+
     let zoom = d3.zoom()
-        .scaleExtent([1, 40])
-        .translateExtent([[-100, -100], [this.size.w + 90, this.size.h + 100]])
+        .scaleExtent([1, 3])
+        .translateExtent([[0, 0], [this.size.w , this.size.h ]])
         .on("zoom", _.bind(this.zoomed, this));
+
     this.svg.call(zoom);
   },
   zoomed: function () {
-    console.log("Zoomed");
-    this.svg.selectAll("g").attr("transform", d3.event.transform);
-    // gX.call(xAxis.scale(d3.event.transform.rescaleX(x)));
-    // gY.call(yAxis.scale(d3.event.transform.rescaleY(y)));
-  },
-  getDragBehavior: function () {
-    return d3.drag()
-             .on('start', this.onDragStart)
-             .on('drag', this.onDrag)
-             .on('end', this.onDragEnd);
+    this.svg.selectAll("g.chartPoints").attr("transform", d3.event.transform);
+    this.svg.select("g.axisX").call(this.axisX.scale(d3.event.transform.rescaleX(this.viewScaleX)));
+    this.svg.select("g.axisY").call(this.axisY.scale(d3.event.transform.rescaleY(this.viewScaleY)));
   },
   onDragStart: function () {
     d3.select(this).raise();
     $("body").addClass("hide-tooltip");
   },
-  onDrag: function (shape) {
+  onDrag: function () {
     var dx = d3.event.sourceEvent.offsetX,
         dy = d3.event.sourceEvent.offsetY;
 
     d3.select(this)
-      .attr("transform", function (d) {
-        return  "translate(" + dx + " ," + dy  + ")";
-      });
+      .attr("transform", function (d) { return  "translate(" + dx + " ," + dy  + ")"; });
   },
   onDragEnd: function () {
     d3.select(this)
@@ -142,9 +120,7 @@ let ScatterPlot = BaseChart.extend({
         return  "translate(" + d.initPos.x + " ," + d.initPos.y + ")";
       });
 
-    _.delay(function () {
-      $("body").removeClass("hide-tooltip");
-    }, 500);
+    _.delay(function () { $("body").removeClass("hide-tooltip"); }, 500);
 
   }
 });
