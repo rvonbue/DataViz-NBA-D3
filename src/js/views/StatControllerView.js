@@ -26,35 +26,13 @@ let StatControllerView = Backbone.View.extend({
     });
   },
   sortPlayerStats: function (dataDump) {
-    let objKey = _.keys(dataDump);  // data dump return POJO with one value an array
-    let sorted3pa = _.sortBy(dataDump[objKey], "fg3mRank");
-
-    sorted3pa.forEach( function (d, i) {
-      if ( d.gpRank > 300 ) sorted3pa.splice(i, 1);  // remove players who don't play alot of games
-    });
-    sorted3pa.length = 50;  // get top 30 players
-    // console.log("sorted3pa", sorted3pa);
-    this.loadChart(this.getSimpleData(sorted3pa));
+    this.data = dataDump;
+    this.loadChart();
   },
   loadChart: function (simpleData) {
     // this.$el.append(template(sorted3pa[0]));
-    // new ScatterPlot({ data: simpleData, parentEl: this.$el });
-    new Sunburst({ parentEl: this.$el });
-  },
-  getSimpleData: function (sorted3pa) {
-    let simpleData = [];
-    _.each(sorted3pa, function (player) {
-      simpleData.push(
-        {
-          playerName: player.playerName,
-          fG3A: player.fG3A,
-          fG3M: player.fG3M,
-          fg3Pct: player.fg3Pct,
-          fg3PctRank: player.fg3PctRank,
-        }
-      )
-    });
-    return simpleData;
+    // new ScatterPlot({ data: this.data, parentEl: this.$el });
+    this.$el.append(new Sunburst({ data: this.data, parentEl: this.$el }).render().el);
   },
   appendHtml: function () {
 

@@ -10,13 +10,37 @@ import BaseChart from "./BaseChart";
 let ScatterPlot = BaseChart.extend({
   initialize: function (options) {
     this.data = options.data;
+    this.getThreePointData(options.data);
     this.parentEl = options.parentEl;
     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15};
     this.size = this.setSize();
-    console.log("SIZE:", this.size);
+    // console.log("SIZE:", this.size);
     this.addListeners();
     this.createSvg();
     this.buildChart();
+  },
+  getThreePointData: function (dataDump) {
+    let objKey = _.keys(dataDump);  // data dump return POJO with one value an array
+    let sorted3pa = _.sortBy(dataDump[objKey], "fg3mRank");
+
+    sorted3pa.forEach( function (d, i) {
+      if ( d.gpRank > 300 ) sorted3pa.splice(i, 1);  // remove players who don't play alot of games
+    });
+    sorted3pa.length = 50;  // get top 30 players
+
+    let simpleData = [];
+    _.each(sorted3pa, function (player) {
+      simpleData.push(
+        {
+          playerName: player.playerName,
+          fG3A: player.fG3A,
+          fG3M: player.fG3M,
+          fg3Pct: player.fg3Pct,
+          fg3PctRank: player.fg3PctRank,
+        }
+      )
+    });
+    this.data = simpleData;
   },
   buildChart: function () {
     // console.log("simpleData", simpleData);
