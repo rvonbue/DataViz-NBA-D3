@@ -29,7 +29,6 @@ let Sunburst = BaseChart.extend({
       name: "Teams",
       children:[]
     };
-    this.color_palettes = [['#4abdac', '#fc4a1a', '#f7b733'], ['#f03b20', '#feb24c', '#ffeda0'], ['#007849', '#0375b4', '#ffce00'], ['#373737', '#dcd0c0', '#c0b283'], ['#e37222', '#07889b', '#eeaa7b'], ['#062f4f', '#813772', '#b82601'], ['#565656', '#76323f', '#c09f80']];
   },
   loadDataNBA: function (data) {
     let self = this;
@@ -90,16 +89,15 @@ let Sunburst = BaseChart.extend({
     if (this.totalLoaded !== this.nbaTeams.length) return;
     // console.log("this.this.dataNBA",this.dataNBA);
     this.formatDataD3(this.dataNBA);
+    this.setScale();
     this.buildChart();
   },
-  createSvg: function () {
-    this.svg = d3.select(this.parentEl[0])
-      .append("svg")
-      .attr("class", "sunburst")
-      .attr("width", this.size.w)
-      .attr("height", this.size.h)
-      .append('g')  // <-- 3
-      .attr('transform', 'translate(' + this.size.w / 2 + ',' + this.size.h / 2 + ')');  //
+
+  setScale: function () {
+     const color_palettes = [['#4abdac', '#fc4a1a', '#f7b733'], ['#f03b20', '#feb24c', '#ffeda0'], ['#007849', '#0375b4', '#ffce00'], ['#373737', '#dcd0c0', '#c0b283'], ['#e37222', '#07889b', '#eeaa7b'], ['#062f4f', '#813772', '#b82601'], ['#565656', '#76323f', '#c09f80']];
+     this.x = d3.scaleLinear().range([0, 2 * Math.PI]),
+     this.y = d3.scaleSqrt().range([0, this.size.radius]),
+     this.color = d3.scaleLinear().domain([0, 0.5, 1]).range(color_palettes[~~(Math.random() * 6)])
   },
   formatDataD3: function (data) {
     let self = this;
@@ -152,12 +150,21 @@ let Sunburst = BaseChart.extend({
       })
       .append("text")
       .attr("transform", function(d) {
-        console.log("depth", d.depth);
+        console.log("computeTextRotation",self.computeTextRotation(d));
 
           return "translate(" + self.arc.centroid(d) + ")rotate(" + self.computeTextRotation(d) + ")"; })
       .attr("dx", "-20")
       .attr("dy", ".5em")
       .text(function(d) { return d.parent ? d.data.name : "" });
+  },
+  createSvg: function () {
+    this.svg = d3.select(this.parentEl[0])
+      .append("svg")
+      .attr("class", "sunburst")
+      .attr("width", this.size.w)
+      .attr("height", this.size.h)
+      .append('g')  // <-- 3
+      .attr('transform', 'translate(' + this.size.w / 2 + ',' + this.size.h / 2 + ')');  //
   },
   render: function () {
     this.$el.append(SunburstTemplate);
