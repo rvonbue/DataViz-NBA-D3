@@ -20,8 +20,9 @@ let Sunburst = BaseChart.extend({
     this.firstBuild();
   },
   firstBuild: function () {
-    this.formatDataD3(dataSunburst);
     this.setScale();
+    this.formatDataD3(dataSunburst);
+
     this.buildChart();
   },
   isAllDataLoaded: function () {
@@ -40,8 +41,11 @@ let Sunburst = BaseChart.extend({
   formatDataD3: function (data) {
      console.log("XXX", data);
     let self = this;
-    this.partition = d3.partition()
-      .size([2 * Math.PI, this.size.radius]);
+    let x = this.x;
+    let y = this.y;
+
+    this.partition = d3.partition();
+      // .size([2 * Math.PI, this.size.radius]);
 
     this.root = d3.hierarchy(data)  // Find the Root Node
        .sum(function(d) { return !d.children || d.children.length === 0 ? d.size :0; });
@@ -49,11 +53,10 @@ let Sunburst = BaseChart.extend({
     this.partition(this.root);  // Calculate each arc
 
     this.arc = d3.arc()
-      .startAngle(function (d) { return d.x0 })
-      .endAngle(function (d) { return d.x1 })
-      .innerRadius(function (d) { return d.y0 })
-      .outerRadius(function (d) { return d.y1 });
-
+      .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x0))); })
+      .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x1))); })
+      .innerRadius(function(d) { return Math.max(0, y(d.y0)); })
+      .outerRadius(function(d) { return Math.max(0, y(d.y1)); });
   },
   computeTextRotation: function (d) {
     var angle = (d.x0 + d.x1) / Math.PI * 90;
@@ -68,7 +71,7 @@ let Sunburst = BaseChart.extend({
         angle = (angle < 120 || angle > 270) ? angle : angle + 180;
       }
 
-    return angle; // labels as spokes
+    return 0; // labels as spokes
   },
   buildChart: function () {
     const self = this;
@@ -81,18 +84,36 @@ let Sunburst = BaseChart.extend({
       .attr("display", function (d) { return d.depth ? null : "none"; })
       .attr("d", self.arc)
       .style('stroke', '#fff')
-      .style("fill", function (d) { return color((d.children ? d : d.parent).data.name); });
+      .style("fill", function (d) { return color((d.children ? d : d.parent).data.name); })
+      .on("click", function (d) {
+          self.click(d, self.svg, self.arc, self.x, self.y, self.size.radius, self.computeTextRotation);
+      });
 
     this.svg.selectAll(".node")  // add Labels for each node
-      .each(function () {
-        // console.log("Width: ", this);
-      })
+      .each(function () {  }) // console.log("Width: ", this);
       .append("text")
       .attr("transform", function(d) {
           return "translate(" + self.arc.centroid(d) + ")rotate(" + self.computeTextRotation(d) + ")"; })
       .attr("dx", "-20")
       .attr("dy", ".5em")
       .text(function(d) { return d.parent ? d.data.name : "" });
+  },
+  click: function (d, svg,arc, x, y, radius, computeTextRotation) {
+    console.log("SVG");
+    svg.transition()
+        .duration(750)
+        .tween("scale", function() {
+          var xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
+              yd = d3.interpolate(y.domain(), [d.y0, 1]),
+              yr = d3.interpolate(y.range(), [d.y0 ? 20 : 0, radius]);
+          return function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); };
+        })
+      .selectAll("path")
+        .attrTween("d", function(d) { return function() { return arc(d); }; })
+      .each(function () { console.log("SVG", this); })
+      .selectAll("text")
+        .attr("transform", function(d) {
+          return "translate(" + arc.centroid(d) + ")rotate(" + computeTextRotation(d) + ")"; })
   },
   createSvg: function () {
     this.svg = d3.select(this.parentEl[0])
@@ -113,7 +134,7 @@ let Sunburst = BaseChart.extend({
      this.size.w = 500;
      this.size.h = 500;
      this.totalLoaded = 0;
-     this.size.radius = Math.min(this.size.w, this.size.h) / 2 - 15;
+     this.size.radius = Math.min(this.size.w, this.size.h) / 2 - 25;
      this.dataNBA = { name: "Teams", children:[] };
    },
    loadDataNBA: function (data) {
