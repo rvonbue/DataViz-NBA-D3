@@ -6,7 +6,7 @@ import d3zoom from "d3-zoom";
 import util from "../util";
 import SunburstTemplate from "./sunburst.html";
 import BaseChart from "./BaseChart";
-// import dataSunburst from "../data/sunburst";
+import dataSunburst from "../data/sunburst";
 
 let Sunburst = BaseChart.extend({
   initialize: function (options) {
@@ -16,90 +16,29 @@ let Sunburst = BaseChart.extend({
     this.addListeners();
     this.initVars();
     this.createSvg();
-    this.loadDataNBA(options.data);
+    // this.loadDataNBA(options.data);
+    this.firstBuild();
   },
-  initVars: function () {
-    this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15};
-    this.size = this.setSize();
-    this.size.w = 500;
-    this.size.h = 500;
-    this.totalLoaded = 0;
-    this.size.radius = Math.min(this.size.w, this.size.h) / 2;
-    this.dataNBA = {
-      name: "Teams",
-      children:[]
-    };
-  },
-  loadDataNBA: function (data) {
-    let self = this;
-    this.nbaTeams = [ NBA.teams[9], NBA.teams[10]],  //just grabbed 4 best teams so don't have to load ton data NBA.teams[1], NBA.teams[5]
-
-    this.nbaTeams.forEach( (d, i)=> {
-
-      NBA.stats.commonTeamRoster({"TeamID": d.teamId }).then(function (res, err) {
-        self.teamRosterLoaded(d, res);
-      });
-    });
-
-  //
-  },
-  getVal: function (arr) {
-
-    let peopleArr = arr.map( (obj)=> {
-      return {
-        name: obj.player ? obj.player.split(" ")[1] : obj.lastName,
-        size: 5
-       };
-    });
-
-    return peopleArr;
-  },
-  getChildren: function (children) {
-    let self = this;
-    return _.map(children, (val, key)=> {
-      let name = (key == "commonTeamRoster") ? "Roster" : key;
-      return {
-        name: name,
-        children: self.getVal(val),
-        size: 10
-       };
-    });
-  },
-  getDataPoint: function (name, children) {
-    // console.log("getDataPoint", this);
-    return {
-      name: name,
-      children: this.getChildren(children),
-      size: 20
-    };
-  },
-  getName: function (d) {
-    return d.player ? d.player : d.coachName;
-  },
-  teamRosterLoaded: function (teamData, data) {
-    let self = this;
-
-    this.dataNBA.children.push(
-      this.getDataPoint(teamData.abbreviation, data)
-    );
-    this.isAllDataLoaded();
+  firstBuild: function () {
+    this.formatDataD3(dataSunburst);
+    this.setScale();
+    this.buildChart();
   },
   isAllDataLoaded: function () {
     this.totalLoaded += 1;
     if (this.totalLoaded !== this.nbaTeams.length) return;
     // console.log("this.this.dataNBA",this.dataNBA);
-    this.formatDataD3(this.dataNBA);
-    this.setScale();
-    this.buildChart();
+    this.firstBuild();
   },
-
   setScale: function () {
-     const color_palettes = [['#4abdac', '#fc4a1a', '#f7b733'], ['#f03b20', '#feb24c', '#ffeda0'], ['#007849', '#0375b4', '#ffce00'], ['#373737', '#dcd0c0', '#c0b283'], ['#e37222', '#07889b', '#eeaa7b'], ['#062f4f', '#813772', '#b82601'], ['#565656', '#76323f', '#c09f80']];
-     this.x = d3.scaleLinear().range([0, 2 * Math.PI]),
-     this.y = d3.scaleSqrt().range([0, this.size.radius]),
-     this.color = d3.scaleLinear().domain([0, 0.5, 1]).range(color_palettes[~~(Math.random() * 6)])
+     const color_palettes = [['#4abdac', '#fc4a1a', '#f7b733'], ['#f03b20', '#feb24c', '#ffeda0'], ['#007849', '#0375b4', '#ffce00'], ['#e37222', '#07889b', '#eeaa7b']];
+     this.x = d3.scaleLinear().range([0, 2 * Math.PI]);
+     this.y = d3.scaleSqrt().range([0, this.size.radius]);
+     // this.color = d3.scaleLinear().domain([0, 0.5, 1]).range(color_palettes[~~(Math.random() * 6)]);
+
   },
   formatDataD3: function (data) {
+     console.log("XXX", data);
     let self = this;
     this.partition = d3.partition()
       .size([2 * Math.PI, this.size.radius]);
@@ -133,7 +72,7 @@ let Sunburst = BaseChart.extend({
   },
   buildChart: function () {
     const self = this;
-    let color = d3.scaleOrdinal(d3.schemeCategory20);
+      let color = d3.scaleOrdinal(d3.schemeCategory20);
 
     this.svg.selectAll('g')
       .data(this.root.descendants())
@@ -150,8 +89,6 @@ let Sunburst = BaseChart.extend({
       })
       .append("text")
       .attr("transform", function(d) {
-        console.log("computeTextRotation",self.computeTextRotation(d));
-
           return "translate(" + self.arc.centroid(d) + ")rotate(" + self.computeTextRotation(d) + ")"; })
       .attr("dx", "-20")
       .attr("dy", ".5em")
@@ -169,6 +106,70 @@ let Sunburst = BaseChart.extend({
   render: function () {
     this.$el.append(SunburstTemplate);
     return this;
+  },
+   initVars: function () {
+     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15};
+     this.size = this.setSize();
+     this.size.w = 500;
+     this.size.h = 500;
+     this.totalLoaded = 0;
+     this.size.radius = Math.min(this.size.w, this.size.h) / 2 - 15;
+     this.dataNBA = { name: "Teams", children:[] };
+   },
+   loadDataNBA: function (data) {
+     let self = this;
+     this.nbaTeams = [ NBA.teams[9], NBA.teams[10]],  //just grabbed 4 best teams so don't have to load ton data NBA.teams[1], NBA.teams[5]
+
+     this.nbaTeams.forEach( (d, i)=> {
+
+       NBA.stats.commonTeamRoster({"TeamID": d.teamId }).then(function (res, err) {
+         self.teamRosterLoaded(d, res);
+       });
+     });
+
+   //
+   },
+   getVal: function (arr) {
+
+     let peopleArr = arr.map( (obj)=> {
+       return {
+         name: obj.player ? obj.player.split(" ")[1] : obj.lastName,
+         size: 5
+        };
+     });
+
+     return peopleArr;
+   },
+   getChildren: function (children) {
+     let getVal = this.getVal;
+     return _.map(children, (val, key)=> {
+       let name = (key == "commonTeamRoster") ? "Roster" : key;
+       return {
+         name: name,
+         children: getVal(val),
+         size: 10
+        };
+     });
+   },
+   getDataPoint: function (name, children) {
+     // console.log("getDataPoint", this);
+     return {
+       name: name,
+       children: this.getChildren(children),
+       size: 20
+     };
+   },
+   getName: function (d) {
+     return d.player ? d.player : d.coachName;
+   },
+   teamRosterLoaded: function (teamData, data) {
+     let self = this;
+
+     this.dataNBA.children.push(
+       this.getDataPoint(teamData.abbreviation, data)
+     );
+     console.log(JSON.stringify(this.dataNBA, null, 4));
+     this.isAllDataLoaded();
    }
 });
 
