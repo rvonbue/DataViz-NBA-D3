@@ -58,7 +58,6 @@ module.exports = {
     new webpack.HotModuleReplacementPlugin(),
     new webpack.ProvidePlugin({ $: "jquery", jQuery: "jquery","window.jQuery": "jquery" }),
     new webpack.ProvidePlugin({	_: "underscore", "window._": "underscore" }),
-    new webpack.ProvidePlugin({	"THREE": "THREE" })
   ],
   devServer: {
     contentBase: path.join(__dirname, "dist"),

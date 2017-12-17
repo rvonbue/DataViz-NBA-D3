@@ -184,9 +184,6 @@ module.exports = {
                         {
                             "name": "Anderson",
                             "size": 5
-                        },
-                        {
-                            "size": 5
                         }
                     ],
                     "size": 10
@@ -195,7 +192,7 @@ module.exports = {
                     "name": "coaches",
                     "children": [
                         {
-                            "name": "D'Antoni",
+                            "name": "DAntoni",
                             "size": 5
                         },
                         {

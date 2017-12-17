@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
   entry: [
@@ -55,25 +55,8 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({template: './src/index.html'}),
-    new ExtractTextPlugin("allStyles.css"),
-    new webpack.LoaderOptionsPlugin({
-      minimize: true,
-      debug: false
-    }),
-    new webpack.ProvidePlugin({	_: "underscore", "window._": "underscore" }),
-    new webpack.ProvidePlugin({	"THREE": "THREE" }),
     new webpack.ProvidePlugin({ $: "jquery", jQuery: "jquery","window.jQuery": "jquery" }),
-    new webpack.optimize.UglifyJsPlugin(),
-    new webpack.optimize.UglifyJsPlugin({
-      beautify: false,
-      mangle: {
-        screw_ie8: true,
-        keep_fnames: true
-      },
-      compress: {
-        screw_ie8: true
-      },
-      comments: false
-    })
+    new webpack.ProvidePlugin({	_: "underscore", "window._": "underscore" }),
+    new UglifyJsPlugin({minimize: true})
   ]
 };

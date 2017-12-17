@@ -2,7 +2,7 @@ import eventController from "./controllers/eventController";
 import template from "./appView.html";
 import StatControllerView from "./views/StatControllerView";
 
-let AppView3d = Backbone.View.extend({
+let AppView = Backbone.View.extend({
   id: "appView",
   initialize: function (options) {
   },
@@ -20,4 +20,4 @@ let AppView3d = Backbone.View.extend({
   }
 });
 
-module.exports = AppView3d;
+module.exports = AppView;

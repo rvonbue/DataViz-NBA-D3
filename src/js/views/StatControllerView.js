@@ -11,6 +11,7 @@ let StatControllerView = Backbone.View.extend({
   initialize: function (options) {
     this.getStats();
     this.addListeners();
+    // this.loadChart();
   },
   addListeners: function () {
     commandController.reply(commandController.GET_SCREEN_SIZE, this.getWidthHeight, this);
@@ -32,10 +33,9 @@ let StatControllerView = Backbone.View.extend({
   loadChart: function (simpleData) {
     // this.$el.append(template(sorted3pa[0]));
     // new ScatterPlot({ data: this.data, parentEl: this.$el });
-    this.$el.append(new Sunburst({ data: this.data, parentEl: this.$el }).render().el);
-  },
-  appendHtml: function () {
-
+    let sunburst = new Sunburst();
+    this.$el.append(sunburst.render().el);
+    sunburst.start();
   },
   render: function () {
     return this;
