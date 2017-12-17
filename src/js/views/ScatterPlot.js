@@ -12,7 +12,7 @@ let ScatterPlot = BaseChart.extend({
   initialize: function (options) {
     this.data = options.data;
     this.getThreePointData(options.data);
-    this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15};
+    this.margin = {top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0};
     this.addListeners();
   },
   start: function () {

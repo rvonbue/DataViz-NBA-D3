@@ -8,13 +8,21 @@
 .axis text {
   font: 10px sans-serif;
 }
+g.tick {
+  > text {
+    font-size: 150%;
+  }
+}
 .axis path,
 .axis line {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
 }
-
+text.label {
+   fill: @black;
+   font-size:15px;
+}
 .circleH {
     &:hover {
       cursor: pointer;
@@ -29,7 +37,7 @@
   background: #FFFFFF;
   color: rgba(1,1,1,1);
   // border-radius: 4px;
-
+.BoxShadowHelper(3);
   border: 1px solid @black;
   span {
     display: block;

@@ -66,20 +66,28 @@ let BaseChart = Backbone.View.extend({
   onDragStart: function () {},
   onDrag: function () {},
   onDragEnd: function () { },
-  addAxesX: function () {
+  addAxesX: function (label) {
     let axisGX = this.svg.append("g")
         .attr("class", "axisX")
         .attr("fill", "#000000")
         .attr("transform", "translate(0," + (this.size.h - this.margin.bottom) + ")");
 
     axisGX
-        .append("rect")
-        .attr("width", this.size.w)
-        .attr("height", this.margin.bottom)
-        // .attr("fill", "#FFFFFF")
+      .append("rect")
+      .attr("width", this.size.w)
+      .attr("height", this.margin.bottom)
+      .attr("fill", "#FFFFFF");
+
+    axisGX.
+      append("text")
+        .attr("class", "label")
+        .attr("transform",
+               "translate(" + (this.size.w / 2) + " ," +
+                              (this.margin.bottom - this.margin.textTop) + ")")
+        .style("text-anchor", "middle")
+        .text(label);
 
     this.axisX = d3.axisBottom(this.viewScaleX)
-    console.log("this.zxis", this.axisX);
     axisGX.call(this.axisX);
 
     this.addFadeIn(axisGX);
@@ -94,6 +102,16 @@ let BaseChart = Backbone.View.extend({
       .attr("height", this.size.h)
       .attr("x", -this.margin.left )
       .attr("fill", "#FFFFFF");
+
+      // text label for the y axis
+    axisGY.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("class", "label")
+      .attr("y", 0 - this.margin.left - this.margin.textLeft)
+      .attr("x",0 - (this.size.h / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text(label);
 
     this.axisY = d3.axisLeft(this.viewScaleY)
     axisGY.call(this.axisY);
