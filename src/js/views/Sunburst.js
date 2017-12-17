@@ -34,21 +34,21 @@ let Sunburst = BaseChart.extend({
   setScale: function () {
      const color_palettes = [['#4abdac', '#fc4a1a', '#f7b733'], ['#f03b20', '#feb24c', '#ffeda0'], ['#007849', '#0375b4', '#ffce00'], ['#e37222', '#07889b', '#eeaa7b']];
      this.x = d3.scaleLinear().range([0, 2 * Math.PI]);
-     this.y = d3.scaleSqrt().range([0, this.size.radius]);
+     this.y = d3.scaleLinear().range([0, this.size.radius]);
      // this.color = d3.scaleLinear().domain([0, 0.5, 1]).range(color_palettes[~~(Math.random() * 6)]);
 
   },
   formatDataD3: function (data) {
-     console.log("XXX", data);
+     console.log("formatDataD3:data", data);
     let self = this;
     let x = this.x;
     let y = this.y;
-
+    let newData = {name: "Hello"}
     this.partition = d3.partition();
       // .size([2 * Math.PI, this.size.radius]);
 
     this.root = d3.hierarchy(data)  // Find the Root Node
-       .sum(function(d) { return !d.children || d.children.length === 0 ? d.size :0; });
+       .sum(function(d) { return !d.children || d.children.length === 0 ? d.size :0; }); // use 100% of arc
 
     this.partition(this.root);  // Calculate each arc
 
@@ -60,34 +60,36 @@ let Sunburst = BaseChart.extend({
   },
   computeTextRotation: function (d) {
     var angle = (d.x0 + d.x1) / Math.PI * 90;
+      console.log("d", d);
+      // if ( d.depth === 1) {
+      //   angle = (angle < 180) ? angle - 90 : angle + 90;
+      // } else if ( d.depth === 2) {
+      //   angle = (angle < 120 || angle > 270) ? angle : angle + 180;
+      // } else if ( d.depth === 3) {
+      //   angle = (angle < 180) ? angle - 90 : angle + 90;
+      // } else {
+      //   angle = (angle < 120 || angle > 270) ? angle : angle + 180;
+      // }
 
-      if ( d.depth === 1) {
-        angle = (angle < 180) ? angle - 90 : angle + 90;
-      } else if ( d.depth === 2) {
-        angle = (angle < 120 || angle > 270) ? angle : angle + 180;
-      } else if ( d.depth === 3) {
-        angle = (angle < 180) ? angle - 90 : angle + 90;
-      } else {
-        angle = (angle < 120 || angle > 270) ? angle : angle + 180;
-      }
-
-    return 0; // labels as spokes
+    return angle; // labels as spokes
   },
   buildChart: function () {
     const self = this;
       let color = d3.scaleOrdinal(d3.schemeCategory20);
 
+    console.log("this.root.descendants()", this.root.descendants());
     this.svg.selectAll('g')
       .data(this.root.descendants())
       .enter().append('g').attr("class", "node")
+      .on("click", function (d) {
+          self.click(d, self.svg, self.arc, self.x, self.y, self.size.radius, self.computeTextRotation);
+      })
       .append('path')
-      .attr("display", function (d) { return d.depth ? null : "none"; })
+      // .attr("display", function (d) { return d.depth ? null : "none"; })  // Remove Center Pie
       .attr("d", self.arc)
       .style('stroke', '#fff')
       .style("fill", function (d) { return color((d.children ? d : d.parent).data.name); })
-      .on("click", function (d) {
-          self.click(d, self.svg, self.arc, self.x, self.y, self.size.radius, self.computeTextRotation);
-      });
+
 
     this.svg.selectAll(".node")  // add Labels for each node
       .each(function () {  }) // console.log("Width: ", this);
@@ -96,7 +98,8 @@ let Sunburst = BaseChart.extend({
           return "translate(" + self.arc.centroid(d) + ")rotate(" + self.computeTextRotation(d) + ")"; })
       .attr("dx", "-20")
       .attr("dy", ".5em")
-      .text(function(d) { return d.parent ? d.data.name : "" });
+      .text(function(d) { return d.data.name ? d.data.name : "" });
+    //  .text(function(d) { return d.parent ? d.data.name : "" });
   },
   click: function (d, svg,arc, x, y, radius, computeTextRotation) {
     console.log("SVG");
@@ -110,10 +113,17 @@ let Sunburst = BaseChart.extend({
         })
       .selectAll("path")
         .attrTween("d", function(d) { return function() { return arc(d); }; })
-      .each(function () { console.log("SVG", this); })
-      .selectAll("text")
+      .on("end", function () {
+
+        svg.selectAll("text")
         .attr("transform", function(d) {
-          return "translate(" + arc.centroid(d) + ")rotate(" + computeTextRotation(d) + ")"; })
+          // console.log("SVG" , d);
+            return "translate(" + arc.centroid(d) + ")rotate(" + computeTextRotation(d) + ")"; });
+      });
+
+
+        // .attr("display", function (d) { return  "none"; });
+
   },
   createSvg: function () {
     this.svg = d3.select(this.parentEl[0])

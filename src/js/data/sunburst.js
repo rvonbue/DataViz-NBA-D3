@@ -1,5 +1,5 @@
 module.exports = {
-    "name": "Teams",
+    "name": "NBA",
     "children": [
         {
             "name": "GSW",
