@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
 module.exports = {
   entry: [
@@ -57,6 +57,18 @@ module.exports = {
     new HtmlWebpackPlugin({template: './src/index.html'}),
     new webpack.ProvidePlugin({ $: "jquery", jQuery: "jquery","window.jQuery": "jquery" }),
     new webpack.ProvidePlugin({	_: "underscore", "window._": "underscore" }),
-    new UglifyJsPlugin({minimize: true})
+    new UglifyJsPlugin({
+      uglifyOptions: {
+        ie8: false,
+        ecma: 8,
+        mangle: true,
+        output: {
+          comments: false,
+          beautify: false,
+        },
+        compress: true,
+        warnings: false
+      }
+    })
   ]
 };

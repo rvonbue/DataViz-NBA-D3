@@ -13,7 +13,10 @@ let BaseChart = Backbone.View.extend({
     $( window ).resize(_.bind( _.debounce(this.resizeChart, 200), this));
   },
   setSize: function () {
-    return commandController.request(commandController.GET_SCREEN_SIZE);
+    return this.getWidthHeight();
+  },
+  getWidthHeight: function () {
+    return {w: this.$el.width(), h: this.$el.height() };
   },
   resizeChart: function () {
     this.setSize();
@@ -66,16 +69,17 @@ let BaseChart = Backbone.View.extend({
   addAxesX: function () {
     let axisGX = this.svg.append("g")
         .attr("class", "axisX")
-        .attr("fill", "#FFFFFF")
+        .attr("fill", "#000000")
         .attr("transform", "translate(0," + (this.size.h - this.margin.bottom) + ")");
 
     axisGX
         .append("rect")
         .attr("width", this.size.w)
         .attr("height", this.margin.bottom)
-        .attr("fill", "#FFFFFF");
+        // .attr("fill", "#FFFFFF")
 
-    this.axisX = d3.axisBottom(this.viewScaleX);
+    this.axisX = d3.axisBottom(this.viewScaleX)
+    console.log("this.zxis", this.axisX);
     axisGX.call(this.axisX);
 
     this.addFadeIn(axisGX);
@@ -104,7 +108,7 @@ let BaseChart = Backbone.View.extend({
      .attr("opacity", 1);
   },
   createSvg: function () {
-    this.svg = d3.select(this.parentEl[0])
+    this.svg = d3.select(this.$el[0])
       .append("svg")
       .attr("width", this.size.w)
       .attr("height", this.size.h);

@@ -8,14 +8,16 @@ import ScatterPlotTemplate from "./ScatterPlot.html";
 import BaseChart from "./BaseChart";
 
 let ScatterPlot = BaseChart.extend({
+  className: "chart scatter-plot",
   initialize: function (options) {
     this.data = options.data;
     this.getThreePointData(options.data);
-    this.parentEl = options.parentEl;
     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15};
-    this.size = this.setSize();
-    // console.log("SIZE:", this.size);
     this.addListeners();
+  },
+  start: function () {
+    this.size = this.setSize();
+    console.log("SIZE:", this.size);
     this.createSvg();
     this.buildChart();
   },
@@ -43,8 +45,6 @@ let ScatterPlot = BaseChart.extend({
     this.data = simpleData;
   },
   buildChart: function () {
-    // console.log("simpleData", simpleData);
-
     let elemEnter = this.svg.selectAll("g")
        .data(this.data)
        .enter().append("g")

@@ -1,0 +1,52 @@
+.chart.scatter-plot {
+  min-height: 500px;
+  min-width: 1000px;
+}
+.domain {
+  stroke: #000;
+}
+.axis text {
+  font: 10px sans-serif;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.circleH {
+    &:hover {
+      cursor: pointer;
+      fill: #3380FF !important;
+    }
+}
+
+.d3-tip {
+  line-height: 1;
+  padding: 0px;
+  margin: 0px;
+  background: #FFFFFF;
+  color: rgba(1,1,1,1);
+  // border-radius: 4px;
+
+  border: 1px solid @black;
+  span {
+    display: block;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+}
+body.hide-tooltip {
+  .d3-tip { display: none;}
+}
+text, path {
+  .no-select;
+}
+span.player-name {
+  font-size: 120%;
+  background-color: rgba(255, 118, 0, 0.32);
+
+  padding: 8px 4px;
+  text-align: center;
+}

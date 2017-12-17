@@ -218,6 +218,7 @@ let Sunburst = BaseChart.extend({
      this.size = this.setSize();
      let widthHeight = Math.min(this.size.w, this.size.h);
      this.size.w = this.size.h = widthHeight
+     console.log("widthHeight");
      this.totalLoaded = 0;
      this.depth = 0; // used for determing what click level User is at
      this.size.radius = widthHeight / 2 ;
