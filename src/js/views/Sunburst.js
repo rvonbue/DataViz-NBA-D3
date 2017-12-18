@@ -1,5 +1,3 @@
-import { getColors as getNbaColors, getMainColor as getNbaMainColor}  from 'nba-color';
-
 import BaseChart from "./BaseChart";
 import dataSunburst from "../data/sunburst";
 import SunburstTemplate from "./sunburst.html";
@@ -17,6 +15,16 @@ let Sunburst = BaseChart.extend({
     // this.loadDataNBA();
     this.firstBuild(dataSunburst);
   },
+  initVars: function () {
+    this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
+    this.size = this.setSize();
+    this.size.w = this.size.h = Math.min(this.size.w, this.size.h);
+    this.totalLoaded = 0;
+    this.depth = 0; // used for determing what click level User is at
+    this.size.radius = (this.size.w / 2) - 15; // Magin numnber add margin so text spill out is visible
+    this.animating = false;
+    this.dataNBA = { name: "NBA", children:[] };
+  },
   firstBuild: function (data) {
     this.setScale();
     this.formatDataD3(data);
@@ -30,6 +38,8 @@ let Sunburst = BaseChart.extend({
   setScale: function () {
      this.x = d3.scaleLinear().range([0, 2 * Math.PI]);
      this.y = d3.scaleSqrt().range([0, this.size.radius]).exponent(1.7);
+     this.textScale = d3.scaleLinear().domain([365, 800]).range([80,150]) //domain is max and min size of chart //range is max/min text size in percent
+     this.margin.textDx = this.margin.textDx * (this.textScale(this.size.w) / 100);
   },
   formatDataD3: function (data) {
     let x = this.x,  y = this.y;
@@ -48,7 +58,7 @@ let Sunburst = BaseChart.extend({
       .innerRadius(function(d) { return Math.max(0, y(d.y0)); })
       .outerRadius(function(d) { return Math.max(0, y(d.y1)); });
   },
-  updateTextTranslationRot: function (svgSelection) {
+  updateTextTransform: function (svgSelection) {
     svgSelection = svgSelection ? svgSelection : this.svg.selectAll("text");
 
     svgSelection
@@ -58,91 +68,101 @@ let Sunburst = BaseChart.extend({
       });
   },
   buildChart: function () {
-    const self = this;
-
-    let teams = this.root.children.map( function (obj) {
-      return obj.data.name;
-    });
-    utils.buildTeamColors(teams);
-
-
+    utils.buildTeamColors(utils.getAllTeamNames(this.root));
+    this.buildRings();
+    this.buildText();
+  },
+  buildRings: function () {
     this.svg.selectAll('g')
       .data(this.root.descendants()).enter()
-      .append('g').attr("class", "node")
+      .append('g').attr("class", "ring-slice")
         .on("click", d => this.click(d) )
         .append('path')                     // .attr("display", function (d) { return d.depth ? null : "none"; })  // Remove Center Pie
-          .attr("d", self.arc)
+          .attr("d", this.arc)
           .style('stroke', d => { return utils.getTeamColor(d, d.depth % 2); })
           .style("fill", d => utils.getFillStyle(d) );
-
-    let svgText = this.svg.selectAll(".node")  // add Labels for each node
+  },
+  buildText: function () {
+    let svgText = this.svg.selectAll(".ring-slice")  // add Labels for each node
       .append("text")
-      .attr("class", (d)=> {
-        if (d.depth === 0 ) return;
-        return this.getRingClasses(d.ancestors(), d.data.name);
-      })
+      .attr("class", (d)=> utils.getRingClasses(d) )
       .text( (d)=> { return  d.parent ? utils.toUpperCase(d.data.name) : " "; });
 
-    this.updateTextTranslationRot(svgText);
+    this.updateTextTransform(svgText);
     this.updateTextAttrs(svgText);
   },
   updateTextAttrs: function (svgText) {
     svgText
-      .attr("dx", d => util.getTextOffsetDx(d, this.margin.textRingPadding))
-      .attr("text-anchor", function (d) { return  d.data.angleFlip ? "end" : "start"; })
-      .attr("dy", ".4em");
-  },
-  getRingClasses: function (ancestors,dataName) {
-    let name = _.reduce(ancestors ,function (memo, node, i) {
-      if ( i===0 ) return dataName;
-      return memo + " " + node.data.name;
-    }, "");
-    return name;
+      .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth))
+      .attr("text-anchor", d => utils.getTextAnchorPosition(d, this.depth))
+      .attr("dy", ".4em")
+      .attr("font-size", d => utils.getFontSize(this.depth, this.textScale(this.size.w)))
   },
 
-  getVisibleTextSelection: function (svgText, d) {
-    let teamName = utils.getTeamName(d.ancestors());
-    teamName = teamName.length <= 0 ? teamName : "." + teamName;
-    return this.svg.selectAll(`text.${d.data.name}${teamName}`);
+  shouldCancelClick: function (d) {
+    if (
+        (d.depth === 0 && this.depth === 0) ||
+        (d.depth === this.depth) ||
+        this.animating === true) { return true; }
+    return false;
   },
   click: function (d) {
-    if ((d.depth === 0 && this.depth === 0) || (d.depth === this.depth) ) return; // If clicking on middle circle while zoomed out do nothing
+    if (this.shouldCancelClick(d)) return; // If clicking on middle circle while zoomed out do nothing
+
     this.depth = d.depth;
-    let self = this;
+    this.animating = true;
+    let x = this.x, y = this.y, radius = this.size.radius, arc = this.arc;
+
     let svgTextSelection = this.svg.selectAll("text")   //hide all text elements
       .attr("opacity", function (d) { return  0; });
 
-    svgTextSelection = this.getVisibleTextSelection(svgTextSelection, d);
+    svgTextSelection = utils.getVisibleTextSelection(this.svg, d);
 
     this.svg.transition()
         .duration(750)
         .tween("scale", function() {
-          var xd = d3.interpolate(self.x.domain(), [d.x0, d.x1]),
-              yd = d3.interpolate(self.y.domain(), [d.y0, 1]),
-              yr = d3.interpolate(self.y.range(), [d.y0 ? 20 : 0, self.size.radius]);
-          return function(t) { self.x.domain(xd(t)); self.y.domain(yd(t)).range(yr(t)); };
+          var xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
+              yd = d3.interpolate(y.domain(), [d.y0, 1]),
+              yr = d3.interpolate(y.range(), [d.y0 ? 20 : 0, radius]);
+          return function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); };
         })
         .selectAll("path")
-          .attrTween("d", function(d) { return function() { return self.arc(d); }; })
+          .attrTween("d", function(d) { return function() { return arc(d); }; })
           .on("end", (d, i )=> {
             if (i !== 0 ) return; //call this once
-            this.popOutText(svgTextSelection);
+            this.popOutText(svgTextSelection, i);
           });
 
   },
-  popOutText: function (svgTextSelection) {
-    this.updateTextTranslationRot(svgTextSelection);
+  popOutText: function (svgTextSelection, i) {
+    this.updateTextTransform(svgTextSelection);
     this.updateTextAttrs(svgTextSelection);
-
+    this.updateFirstRingText(svgTextSelection);
+    this.animateText(svgTextSelection);
+  },
+  updateFirstRingText: function (svgTextSelection) {
     svgTextSelection
+      .filter( (d,i) => {
+        if (this.depth === 0) return d.depth - 1 === this.depth;
+        return i === 0;
+      })
+      .attr("dx",  0)
+      .attr("text-anchor", "middle")
+      .attr("opacity", 1 )
+      .attr("transform", d => utils.getTranslateRotate(this.arc.centroid(d), 0 ))
+      .attr("font-size", ()=> {  return (100 + (this.depth * 25)) + "%"});
+  },
+  animateText: function (svgTextSelection) {
+    svgTextSelection
+      .filter(function (d, i) { return i !== 0;})
       .attr("dx", function (d) { return d.data.angleFlip ? -200 : 200 })
       .transition()
         .duration(250)
-        .attr("opacity", function (d) { return 1; })
-        .attr("dx", (d) => {
-          let textPadding = Math.max(this.margin.textRingPadding, (this.margin.textRingPadding * this.depth));
-          return util.getTextOffsetDx(d, textPadding);
-        })
+        .attr("opacity", 1)
+        .attr("font-size", ()=> utils.getFontSize(this.depth, this.textScale(this.size.w)))
+        .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth) );
+
+    this.animating = false;
   },
   createSvg: function () {
 
@@ -158,19 +178,10 @@ let Sunburst = BaseChart.extend({
     this.$el.append(SunburstTemplate({ label: this.label }));
     return this;
   },
-  initVars: function () {
-     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textRingPadding: 35 };
-     this.size = this.setSize();
-     let widthHeight = Math.min(this.size.w, this.size.h);
-     this.size.w = this.size.h = widthHeight
-     this.totalLoaded = 0;
-     this.depth = 0; // used for determing what click level User is at
-     this.size.radius = widthHeight / 2 - (widthHeight / 13); // Magin numnber add margin so text spill out is visible
-     this.dataNBA = { name: "NBA", children:[] };
-   },
+
    loadDataNBA: function () {
      let self = this;
-     this.nbaTeams = [  NBA.teams[7], NBA.teams[8],NBA.teams[9], NBA.teams[10]],  //just grabbed 4 best teams so don't have to load ton data NBA.teams[1], NBA.teams[5]
+     this.nbaTeams = [NBA.teams[9], NBA.teams[10]],  //just grabbed 4 best teams so don't have to load ton data NBA.teams[1], NBA.teams[5]
 
      this.nbaTeams.forEach( (d, i)=> {
 
@@ -181,7 +192,6 @@ let Sunburst = BaseChart.extend({
 
    },
    getVal: function (arr) {
-
      let peopleArr = arr.map( (obj)=> {
        let name =  obj.player ? obj.player.split(" ")[1] : obj.lastName.replace("'", "");
        return {

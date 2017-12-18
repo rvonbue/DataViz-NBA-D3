@@ -1,20 +1,24 @@
 .chart.sunburst {
-  max-width: 1200px;
-  max-height: 1200px;
-  min-height: 600px;
-  min-width: 600px;
+  // width: 600px;
+  // height: 600px;
+  max-width: 800px;
+  max-height: 800px;
+  min-height: 400px;
+  min-width: 400px;
   margin: 0px auto;
   vertical-align: top;
 }
 .chart-title {
   font-size: 150%;
 }
-svg.text { pointer-events: none; }
+svg text {
+  pointer-events: none;
+ }
 path {
   stroke: #fff;
 }
 
-.node {
+.ring-slice {
   cursor: pointer;
 }
 text.coaches {

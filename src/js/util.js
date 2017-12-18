@@ -3,9 +3,33 @@ import { getColors as getNbaColors, getMainColor as getNbaMainColor}  from 'nba-
 let util = {
   rick: "hello",
   teamColors: {},
-  getTextOffsetDx: function (d, padding) {
+  getFontSize: function (depth, tScale) {
+    return tScale + "%";
+  },
+  getSize: function (d) {
+    var bbox = this.getBBox(),
+      cbbox = this.parentNode.getBBox(),
+      scale = Math.min(cbbox.width/bbox.width, cbbox.height/bbox.height);
+      d.scale = scale;
+  },
+  getVisibleTextSelection: function (svg, d) {
+    let teamName = this.getTeamName(d.ancestors());
+    teamName = teamName.length <= 0 ? teamName : "." + teamName;
+    return svg.selectAll(`text.${d.data.name}${teamName}`);
+  },
+  getTextAnchorPosition: function (d, depth) {
+    let position = d.data.angleFlip ? "end" : "start";
+    if (depth === 0) position = (d.depth - 1 === depth) ? "middle" : position;
+    return position;
+  },
+  getTextOffsetDx: function (d, padding, currentDepth) {
+    // console.log("currentDepth:", currentDepth);
+    console.log("padding:", padding );
     if (d.depth <= 1 ) return 0;
     return d.data.angleFlip ? padding : -padding;
+  },
+  getAllTeamNames: function (root) {
+    return root.children.map( function (obj) { return obj.data.name; });
   },
   getFillStyle: function (d) {
     let index = index = d.depth % 2 ? 0 : 1;
@@ -31,7 +55,23 @@ let util = {
     return this.teamColors[teamName ? teamName : "nba"][index];
   },
   getTranslateRotate: function (translate, rotate) {
-    return "translate(" + translate + ")rotate(" + rotate + ")";
+    return this.getTranslate(translate) + this.getRotation(rotate);
+  },
+  getTranslate: function (translate) {
+    return "translate(" + translate + ")";
+  },
+  getRotation: function (rotate) {
+    return "rotate(" + rotate + ")";
+  },
+  getRingClasses: function (d) {
+    if (d.depth === 0 ) return;
+    let ancestors = d.ancestors(), dataName = d.data.name;
+
+    let name = _.reduce(ancestors ,function (memo, node, i) {
+      if ( i===0 ) return dataName;
+      return memo + " " + node.data.name;
+    }, "");
+    return name;
   },
   computeTextRotation: function (d, x) {
    let angle = (x((d.x0 + d.x1)/2) - Math.PI / 2) / Math.PI * 180;
