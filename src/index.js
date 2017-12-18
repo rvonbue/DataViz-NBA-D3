@@ -14,7 +14,6 @@ $(function () {
   }
 
   $("body").append(view.render().el);
-  view.attachedToDOM();
 
 });
 

@@ -1,10 +1,16 @@
 import { getColors as getNbaColors, getMainColor as getNbaMainColor}  from 'nba-color';
-
+import { color as d3Color } from "d3";
 let util = {
   rick: "hello",
   teamColors: {},
   getFontSize: function (depth, tScale) {
     return tScale + "%";
+  },
+  getFontColor: function (d) {
+    let rgbVal = _.reduce(d3Color(this.getFillStyle(d)), function (memo, num) {
+      return memo + num;
+    });
+    return rgbVal >= ((255 * 3) / 2) ? "#000" : "#fff";
   },
   getSize: function (d) {
     var bbox = this.getBBox(),
@@ -23,8 +29,6 @@ let util = {
     return position;
   },
   getTextOffsetDx: function (d, padding, currentDepth) {
-    // console.log("currentDepth:", currentDepth);
-    console.log("padding:", padding );
     if (d.depth <= 1 ) return 0;
     return d.data.angleFlip ? padding : -padding;
   },

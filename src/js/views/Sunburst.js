@@ -10,20 +10,34 @@ let Sunburst = BaseChart.extend({
     this.addListeners();
   },
   start: function () {
+    if ( this.isReady() == false ) {
+      setTimeout(()=> {this.start()}, 10);
+      return;
+    }
+      console.log("start::", this.isReady());
     this.initVars();
     this.createSvg();
     // this.loadDataNBA();
     this.firstBuild(dataSunburst);
   },
+  isReady: function () {
+    console.log(" this.$el.width()::",  this.$el.width());
+    let isReady = this.$el.width() != 0 ? true : false;
+    return isReady;
+  },
   initVars: function () {
     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
-    this.size = this.setSize();
-    this.size.w = this.size.h = Math.min(this.size.w, this.size.h);
+    this.size = this.getWidthHeight();
+    this.size.w = this.size.h = Math.min(this.size.w, this.size.h) * 0.9;
+    console.log("SIZE::", this.size);
     this.totalLoaded = 0;
     this.depth = 0; // used for determing what click level User is at
     this.size.radius = (this.size.w / 2) - 15; // Magin numnber add margin so text spill out is visible
     this.animating = false;
     this.dataNBA = { name: "NBA", children:[] };
+  },
+  getWidthHeight: function () {
+    return {w: this.$el.width(), h: this.$el.height() };
   },
   firstBuild: function (data) {
     this.setScale();
@@ -45,8 +59,6 @@ let Sunburst = BaseChart.extend({
     let x = this.x,  y = this.y;
 
     this.partition = d3.partition();
-      // .size([2 * Math.PI, this.size.radius]);
-
     this.root = d3.hierarchy(data)  // Find the Root Node
        .sum(function(d) { return !d.children || d.children.length === 0 ? d.size : 0; }); // use 100% of arc
 
@@ -86,6 +98,7 @@ let Sunburst = BaseChart.extend({
     let svgText = this.svg.selectAll(".ring-slice")  // add Labels for each node
       .append("text")
       .attr("class", (d)=> utils.getRingClasses(d) )
+      .attr("fill", d => utils.getFontColor(d))
       .text( (d)=> { return  d.parent ? utils.toUpperCase(d.data.name) : " "; });
 
     this.updateTextTransform(svgText);
@@ -109,9 +122,9 @@ let Sunburst = BaseChart.extend({
   click: function (d) {
     if (this.shouldCancelClick(d)) return; // If clicking on middle circle while zoomed out do nothing
 
+    let x = this.x, y = this.y, radius = this.size.radius, arc = this.arc;
     this.depth = d.depth;
     this.animating = true;
-    let x = this.x, y = this.y, radius = this.size.radius, arc = this.arc;
 
     let svgTextSelection = this.svg.selectAll("text")   //hide all text elements
       .attr("opacity", function (d) { return  0; });
@@ -128,13 +141,11 @@ let Sunburst = BaseChart.extend({
         })
         .selectAll("path")
           .attrTween("d", function(d) { return function() { return arc(d); }; })
-          .on("end", (d, i )=> {
-            if (i !== 0 ) return; //call this once
-            this.popOutText(svgTextSelection, i);
-          });
+          .on("end", (d, i )=> { this.popOutText(svgTextSelection, i) });
 
   },
   popOutText: function (svgTextSelection, i) {
+    if (i !== 0 ) return;
     this.updateTextTransform(svgTextSelection);
     this.updateTextAttrs(svgTextSelection);
     this.updateFirstRingText(svgTextSelection);
@@ -157,7 +168,7 @@ let Sunburst = BaseChart.extend({
       .filter(function (d, i) { return i !== 0;})
       .attr("dx", function (d) { return d.data.angleFlip ? -200 : 200 })
       .transition()
-        .duration(250)
+        .duration(350)
         .attr("opacity", 1)
         .attr("font-size", ()=> utils.getFontSize(this.depth, this.textScale(this.size.w)))
         .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth) );

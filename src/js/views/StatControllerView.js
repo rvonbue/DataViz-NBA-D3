@@ -9,8 +9,11 @@ window.NBA = NBA;
 let StatControllerView = Backbone.View.extend({
   id: "stat-view",
   initialize: function (options) {
-    this.getStats();
-    // this.loadChart();
+    this.childViews = [];
+  },
+  start: function () {
+    // this.getStats();
+    this.loadChart();
   },
   getStats: function () {
     let self = this;
@@ -27,11 +30,13 @@ let StatControllerView = Backbone.View.extend({
     let scatterPlot = new ScatterPlot({ data: data });
     this.$el.append(scatterPlot.render().el);
     scatterPlot.start();
+    this.childViews.push(scatterPlot);
   },
   loadSunburst: function () {
     let sunburst = new Sunburst();
     this.$el.append(sunburst.render().el);
     sunburst.start();
+    this.childViews.push(sunburst);
   },
   loadChart: function (simpleData) {
     // this.loadScatterPlot(this.data);
