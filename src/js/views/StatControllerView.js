@@ -23,14 +23,19 @@ let StatControllerView = Backbone.View.extend({
     this.data = dataDump;
     this.loadChart();
   },
-  loadChart: function (simpleData) {
-    let scatterPlot = new ScatterPlot({ data: this.data, parentEl: this.$el });
+  loadScatterPlot: function (data) {
+    let scatterPlot = new ScatterPlot({ data: data });
     this.$el.append(scatterPlot.render().el);
     scatterPlot.start();
-
+  },
+  loadSunburst: function () {
     let sunburst = new Sunburst();
     this.$el.append(sunburst.render().el);
     sunburst.start();
+  },
+  loadChart: function (simpleData) {
+    // this.loadScatterPlot(this.data);
+    this.loadSunburst();
   },
   render: function () {
     return this;
