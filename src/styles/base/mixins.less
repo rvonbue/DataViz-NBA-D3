@@ -33,9 +33,72 @@
 
   }
 }
+.border {
+  border: 1px solid @black;
+  .BoxShadowHelper(3);
+}
 .button {
   cursor: pointer;
 }
 .boldme {
   font-weight: bold;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+  display: inline-block;
+  width: 100%;
+}
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  // max-width: 100%;
+  max-height: 250px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  z-index: 10;
+}
+.right {
+  right: 0;
+}
+/* Links inside the dropdown */
+.dropdown-content a {
+  color: black;
+  padding: 12px 8px;
+  text-decoration: none;
+  display: block;
+}
+.dropdown-content.selected {
+
+}
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+.pointer-events-none {
+  pointer-events: none;
+}
+/* Change the background color of the dropdown button when the dropdown content is shown */
+.dropdown:hover .dropbtn {
+    .BoxShadowHelper(5);
+}
+.dropbtn {
+  background-color: @colorWhite;
+  color: @black;
+  font-size: 16px;
+  cursor: pointer;
+  .border;
+}
+.leyenda {
+  display: inline-block;
+  margin-bottom: 25px;
+  border: 1px solid @black;
+  padding: 0px 8px 2px 8px;
+  background-color: @colorWhite;
+  .BoxShadowHelper(3);
 }

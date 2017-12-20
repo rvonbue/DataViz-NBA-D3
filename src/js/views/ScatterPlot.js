@@ -1,10 +1,10 @@
 import eventController from "../controllers/eventController";
 import commandController from "../controllers/commandController";
-import * as d3 from "d3";
 import d3tip from "d3-tip";
 import d3zoom from "d3-zoom";
 import util from "../util";
 import ScatterPlotTemplate from "./ScatterPlot.html";
+import ChartLabelTemplate from "./html/chartTitle.html";
 import BaseChart from "./BaseChart";
 
 let ScatterPlot = BaseChart.extend({
@@ -61,7 +61,7 @@ let ScatterPlot = BaseChart.extend({
     this.addTextSVG(elemEnter);
   },
   addShapeSVG: function (elemEnter) {
-    let r = 10;
+    let r = Math.min((this.size.w / 90), 10);
     let self = this;
 
     let circle = elemEnter.append("circle")
@@ -146,6 +146,61 @@ let ScatterPlot = BaseChart.extend({
 
     _.delay(function () { $("body").removeClass("hide-tooltip"); }, 500);
 
+  },
+  addAxesX: function (label) {
+    let axisGX = this.svg.append("g")
+        .attr("class", "axisX")
+        .attr("fill", "#000000")
+        .attr("transform", "translate(0," + (this.size.h - this.margin.bottom) + ")");
+
+    axisGX
+      .append("rect")
+      .attr("width", this.size.w)
+      .attr("height", this.margin.bottom)
+      .attr("fill", "#FFFFFF");
+
+    axisGX.
+      append("text")
+        .attr("class", "label")
+        .attr("transform",
+               "translate(" + (this.size.w / 2) + " ," +
+                              (this.margin.bottom - this.margin.textTop) + ")")
+        .style("text-anchor", "middle")
+        .text(label);
+
+    this.axisX = d3.axisBottom(this.viewScaleX)
+    axisGX.call(this.axisX);
+
+    this.addFadeIn(axisGX);
+  },
+  addAxesY: function (label) {
+    let axisGY = this.svg.append("g")
+      .attr("class", "axisY")
+      .attr("transform", "translate(" + this.margin.left + "," + 0 + ")");
+
+    axisGY.append("rect")
+      .attr("width", this.margin.left)
+      .attr("height", this.size.h)
+      .attr("x", -this.margin.left )
+      .attr("fill", "#FFFFFF");
+
+      // text label for the y axis
+    axisGY.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("class", "label")
+      .attr("y", 0 - this.margin.left - this.margin.textLeft)
+      .attr("x",0 - (this.size.h / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text(label);
+
+    this.axisY = d3.axisLeft(this.viewScaleY)
+    axisGY.call(this.axisY);
+    this.addFadeIn(axisGY);
+  },
+  render: function () {
+    this.$el.append(ChartLabelTemplate({ label: "Scatter Plot" }));
+    return this;
   }
 });
 

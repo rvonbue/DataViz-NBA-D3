@@ -1,7 +1,9 @@
 import BaseChart from "./BaseChart";
 import dataSunburst from "../data/sunburst";
 import SunburstTemplate from "./sunburst.html";
+import ChartLabelTemplate from "./html/chartTitle.html";
 import utils from "../util";
+import teamNameTemplate from "./html/addTeamNameTemplate.html";
 
 let Sunburst = BaseChart.extend({
   className: "chart sunburst",
@@ -9,38 +11,92 @@ let Sunburst = BaseChart.extend({
   initialize: function (options) {
     this.addListeners();
   },
+  addListeners: function () {
+    this.$el.on("click", ".team-name", (d) => this.clickSelectTeam(d));
+    this.$el.on("click", ".team-abbreviation-container", (d) => this.destroyElRemoveTeam(d));
+    this.$el.on("click", "#load-teams", (d) => this.resetChart(d));
+  },
+  destroyElRemoveTeam: function (d) {
+    let el = $(d.currentTarget);
+    let array = this.clickData.teams; // Test
+    let search_term = el.find(".team-abbreviation:first").text();
+
+    console.log("this.clickData.teams len", this.clickData.teams.length);
+    this.clickData.teams = _.filter(this.clickData.teams, d => { return d !== search_term; });
+  console.log("this.clickData.teams len", this.clickData.teams.length);
+    el.remove();
+  },
+  resetChart: function () {
+    this.svg
+      .selectAll("g")
+      .data([])
+      .exit().remove();
+
+    this.dataNBA.children = [];
+    this.totalLoaded = 0;
+    this.loadDataNBA();
+  },
+  clickSelectTeam: function (d) {
+    let el = $(d.currentTarget);
+    let dropDownEl = el.closest(".dropdown");
+    let dropdownContentEl = dropDownEl.find(".dropdown-content")
+                                      .addClass("pointer-events-none");
+    let abbreviation = NBA.teams[el.index()].abbreviation;
+
+    this.$el.find("#team-container").append(teamNameTemplate({
+       abbreviation: abbreviation,
+       color: utils.getTeamColorFromAbbr(abbreviation)
+    }));
+
+    this.clickData.teams.push(abbreviation);
+    this.showLoadTeams();
+    setTimeout(function () { dropdownContentEl.removeClass("pointer-events-none"); }, 250);
+  },
+  showLoadTeams: function () {
+    this.$el.find("#load-teams")
+            .addClass("show");
+  },
   start: function () {
     if ( this.isReady() == false ) {
       setTimeout(()=> {this.start()}, 10);
       return;
     }
-      console.log("start::", this.isReady());
-    this.initVars();
+    this.initSize();
+    this.setVars();
     this.createSvg();
-    // this.loadDataNBA();
+    this.setScale();
     this.firstBuild(dataSunburst);
+    this.clickData.teams = ["GSW", "HOU"];
+    this.clickData.teams.forEach( (abbr)=> {
+      this.addNewTeam(abbr);
+    });
+    console.log("this.clickData.teams len",);
+  },
+  addNewTeam: function (abbreviation) {
+    this.teamContainerEl.append(teamNameTemplate({
+       abbreviation: abbreviation,
+       color: utils.getTeamColorFromAbbr(abbreviation)
+    }));
   },
   isReady: function () {
-    console.log(" this.$el.width()::",  this.$el.width());
-    let isReady = this.$el.width() != 0 ? true : false;
+    let isReady = this.$el.width() >= 200 ? true : false;
     return isReady;
   },
-  initVars: function () {
+  initSize: function () {
     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
-    this.size = this.getWidthHeight();
+    this.size = utils.getWidthHeight(this.$el);
     this.size.w = this.size.h = Math.min(this.size.w, this.size.h) * 0.9;
     console.log("SIZE::", this.size);
-    this.totalLoaded = 0;
+  },
+  setVars: function () {
     this.depth = 0; // used for determing what click level User is at
     this.size.radius = (this.size.w / 2) - 15; // Magin numnber add margin so text spill out is visible
     this.animating = false;
+    this.clickData = { teams:[] };
     this.dataNBA = { name: "NBA", children:[] };
-  },
-  getWidthHeight: function () {
-    return {w: this.$el.width(), h: this.$el.height() };
+    this.teamContainerEl = this.$el.find("#team-container");
   },
   firstBuild: function (data) {
-    this.setScale();
     this.formatDataD3(data);
     this.buildChart();
   },
@@ -51,7 +107,7 @@ let Sunburst = BaseChart.extend({
   },
   setScale: function () {
      this.x = d3.scaleLinear().range([0, 2 * Math.PI]);
-     this.y = d3.scaleSqrt().range([0, this.size.radius]).exponent(1.7);
+     this.y = d3.scaleSqrt().range([0, this.size.radius]).exponent(1.8);
      this.textScale = d3.scaleLinear().domain([365, 800]).range([80,150]) //domain is max and min size of chart //range is max/min text size in percent
      this.margin.textDx = this.margin.textDx * (this.textScale(this.size.w) / 100);
   },
@@ -87,12 +143,16 @@ let Sunburst = BaseChart.extend({
   buildRings: function () {
     this.svg.selectAll('g')
       .data(this.root.descendants()).enter()
-      .append('g').attr("class", "ring-slice")
+      .append('g')
+        .attr("class", "ring-slice")
+        .on("mouseover",function(){ d3.select(this).transition().attr("transform","scale(1.05)") })
+        .on("mouseout",function(){ d3.select(this).transition().attr("transform","scale(1)") })
         .on("click", d => this.click(d) )
         .append('path')                     // .attr("display", function (d) { return d.depth ? null : "none"; })  // Remove Center Pie
           .attr("d", this.arc)
           .style('stroke', d => { return utils.getTeamColor(d, d.depth % 2); })
           .style("fill", d => utils.getFillStyle(d) );
+
   },
   buildText: function () {
     let svgText = this.svg.selectAll(".ring-slice")  // add Labels for each node
@@ -108,15 +168,15 @@ let Sunburst = BaseChart.extend({
     svgText
       .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth))
       .attr("text-anchor", d => utils.getTextAnchorPosition(d, this.depth))
-      .attr("dy", ".4em")
+      // .attr("dy", ".4em")
       .attr("font-size", d => utils.getFontSize(this.depth, this.textScale(this.size.w)))
+      .attr("alignment-baseline", "middle")
   },
-
   shouldCancelClick: function (d) {
     if (
-        (d.depth === 0 && this.depth === 0) ||
-        (d.depth === this.depth) ||
-        this.animating === true) { return true; }
+        (d.depth === 0 && this.depth === 0) ||  // if Im on level 1
+        (d.depth === this.depth) ||   // Is user on same level
+        this.animating === true) { return true; }  // am I still animating
     return false;
   },
   click: function (d) {
@@ -176,7 +236,6 @@ let Sunburst = BaseChart.extend({
     this.animating = false;
   },
   createSvg: function () {
-
     this.svg = d3.select(this.$el[0])
       .append("svg")
       .attr("class", "sunburst")
@@ -186,16 +245,21 @@ let Sunburst = BaseChart.extend({
       .attr('transform', 'translate(' + this.size.w / 2 + ',' + this.size.h / 2 + ')');  //
   },
   render: function () {
-    this.$el.append(SunburstTemplate({ label: this.label }));
+    this.$el.append(ChartLabelTemplate({ label: this.label }))
+    this.$el.append(SunburstTemplate({ teamList: NBA.teams }));
     return this;
   },
-
-   loadDataNBA: function () {
+  loadDataNBA: function () {
      let self = this;
-     this.nbaTeams = [NBA.teams[9], NBA.teams[10]],  //just grabbed 4 best teams so don't have to load ton data NBA.teams[1], NBA.teams[5]
+     this.clickData.teams = this.clickData.teams.length > 0 ? this.clickData.teams : ["GSW", "HOU"];
 
+     this.nbaTeams = _.map(this.clickData.teams, function (val, i) {
+       return _.find(NBA.teams, function(obj){ return obj.abbreviation === val });
+     })
+
+    //  console.log("this.nbaTeams", this.nbaTeams);
+    // console.log("this.this.clickData.teams", this.clickData.teams);
      this.nbaTeams.forEach( (d, i)=> {
-
        NBA.stats.commonTeamRoster({"TeamID": d.teamId }).then(function (res, err) {
          self.teamRosterLoaded(d, res);
        });

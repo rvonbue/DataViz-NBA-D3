@@ -1,8 +1,12 @@
 import { getColors as getNbaColors, getMainColor as getNbaMainColor}  from 'nba-color';
 import { color as d3Color } from "d3";
+
 let util = {
   rick: "hello",
   teamColors: {},
+  getWidthHeight: function (el) {
+    return {w: el.width(), h: el.height() };
+  },
   getFontSize: function (depth, tScale) {
     return tScale + "%";
   },
@@ -41,8 +45,10 @@ let util = {
   },
   buildTeamColors: function (teams) {
     let teamColors = {"nba": ["rgba(0,0,0,0)", "rgba(0,0,0,0)"]};
-    teams.forEach( function (teamName) {
-      teamColors[teamName] =  _.map(getNbaColors(teamName), function (color) {return color.hex });
+    teams = NBA.teams
+
+    teams.forEach( function (team) {
+      teamColors[team.abbreviation] =  _.map(getNbaColors(team.abbreviation), function (color) {return color.hex });
     });
     this.teamColors = teamColors;
   },
@@ -54,9 +60,13 @@ let util = {
     if (stringText === undefined || stringText.length < 0) return "Default";
     return stringText.charAt(0).toUpperCase() + stringText.slice(1);
   },
+  getTeamColorFromAbbr: function (teamName, index) {
+    index = index ? index : 0;
+    return this.teamColors[teamName ? teamName : "nba"][index];
+  },
   getTeamColor: function (d, index) {
     let teamName = this.getTeamName(d.ancestors());
-    return this.teamColors[teamName ? teamName : "nba"][index];
+    return this.getTeamColorFromAbbr(teamName,index);
   },
   getTranslateRotate: function (translate, rotate) {
     return this.getTranslate(translate) + this.getRotation(rotate);

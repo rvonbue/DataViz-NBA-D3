@@ -1,18 +1,17 @@
 .chart.sunburst {
   width: 100%;
   height: 100%;
-  max-width: 600px;
-  max-height: 600px;
+  max-width: 800px;
+  max-height: 800px;
 
+  svg.sunburst {
+    margin-top: 50px;
+  }
   .leyenda {
-    display: inline-block;
-    // position: absolute;
-    border: 1px solid @black;
-    padding: 8px;
-    background-color: white;
-    .BoxShadowHelper(3)
+    position: absolute;
   }
 }
+
 .chart-title {
   font-size: 150%;
 }
@@ -21,13 +20,12 @@ g.ring-slice {
       > path {
         &:hover {
           fill: rgba(173,216,230,1) !important;
-          background: url(../sprites/ic_settings_backup_restore_black_48px.svg);
         }
 
       }
     }
   &:hover {
-    stroke: #FFF;
+    font-weight:bold;
   }
 }
 
@@ -43,57 +41,91 @@ path {
   .BoxShadowHelper(5);
 }
 
-/* Dropdown Button */
-.dropbtn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 16px;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
+.scrollbar
+{
+	margin-left: 30px;
+	float: left;
+	height: 300px;
+	width: 65px;
+	background: #F5F5F5;
+	overflow-y: scroll;
+	margin-bottom: 25px;
+}
+.force-overflow
+{
+	min-height: 450px;
+}
+.style-1-scrollbar::-webkit-scrollbar
+{
+	width: 12px;
+	background-color: #F5F5F5;
 }
 
-/* The container <div> - needed to position the dropdown content */
-.dropdown {
-    position: relative;
-    display: inline-block;
+.style-1-scrollbar::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+	background-color: #555;
 }
-
-/* Dropdown Content (Hidden by Default) */
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
+.options-container{
+  position: absolute;
+  right: 0px;
+  text-align: center;
+  width: 55px;
 }
+.chose-team-label {
+  .border;
+  margin-bottom: 4px;
+  padding: 4px 0px;
+}
+#team-container {
+  margin: 0px;
+}
+div.team-abbreviation-container {
+  .border;
+  box-sizing: border-box;
+  background-color: @colorWhite;
+  display: inline-block;
+  cursor: pointer;
+  width: 60%;
+  min-width: 55px;
+  margin: 4px 0px;
+  padding: 8px 0px;
+  text-align: center;
 
-/* Links inside the dropdown */
-.dropdown-content a {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
+  &:hover {
+    .icon-close { display:block};
+  }
+}
+#load-teams {
+  width: 100%;
+  padding: 6px 4px;
+  .dropbtn;
+  margin: 6px 0px;
+  text-align: center;
+  background-color: @colorWhite;
+  box-sizing: border-box;
+  cursor: pointer;
+  &.show {
     display: block;
+  }
 }
-
-/* Change color of dropdown links on hover */
-.dropdown-content a:hover {background-color: #f1f1f1}
-
-/* Show the dropdown menu on hover */
-.dropdown:hover .dropdown-content {
-    display: block;
+.icon-close {
+  display: none;
+  position: absolute;
+  margin-top: -14px;
+  left: 3px;
+  width: 48px;
+  height: 48px;
+  background: url(../sprites/ic_clear_black_48px.svg);
+  background-size: 48px 48px;
 }
-
-/* Change the background color of the dropdown button when the dropdown content is shown */
-.dropdown:hover .dropbtn {
-    background-color: #3e8e41;
+.icon-add {
+  left: 8px;
+  width: 48px;
+  height: 48px;
+  margin: 0px auto;
+  background: url(../sprites/ic_add_circle_outline_black_48px.svg);
+  background-size: 48px 48px;
 }
-// .sunburstCenter {
-//   position: absolute;
-//   background: url(../sprites/ic_settings_backup_restore_black_48px.svg);
-//   width: 48px;
-//   height: 48px;
-//   top: ~"calc(50% + 24px)";
-//   left: ~"calc(50% - 24px)";
-// }
+/* Style The Dropdown Button */

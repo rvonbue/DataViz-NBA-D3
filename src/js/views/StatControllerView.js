@@ -12,15 +12,8 @@ let StatControllerView = Backbone.View.extend({
     this.childViews = [];
   },
   start: function () {
-    // this.getStats();
-    this.loadChart();
-  },
-  getStats: function () {
-    let self = this;
-
-    NBA.stats.playerStats().then(function (res, err) {
-        self.sortPlayerStats(res);
-    });
+    NBA.stats.playerStats().then((res, err) => this.sortPlayerStats(res));
+    // this.loadChart();
   },
   sortPlayerStats: function (dataDump) {
     this.data = dataDump;
@@ -39,7 +32,7 @@ let StatControllerView = Backbone.View.extend({
     this.childViews.push(sunburst);
   },
   loadChart: function (simpleData) {
-    // this.loadScatterPlot(this.data);
+    this.loadScatterPlot(this.data);
     this.loadSunburst();
   },
   render: function () {

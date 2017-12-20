@@ -1,4 +1,13 @@
-<div class='leyenda'>
-  <div class="chart-title"><%= label %></div>
-  <div> Interactive NBA Rosters</div>
+<div class="options-container">
+  <div class="dropdown">
+    <div class="dropbtn"><div class="icon-add"></div></div>
+    <div class="dropdown-content style-1-scrollbar">
+      <% _.each(teamList, function(team,i){ %>
+          <a class="team-name" href="#"><%= team.simpleName %></a>
+       <% }); %>
+    </div>
+  </div>
+  <div id="load-teams">Load</div>
+  <div id="team-container"></div>
+
 </div>
