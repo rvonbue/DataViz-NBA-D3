@@ -147,8 +147,19 @@ let Sunburst = BaseChart.extend({
       .data(this.root.descendants()).enter()
       .append('g')
         .attr("class", "ring-slice")
-        // .on("mouseover",function(){ d3.select(this).transition().attr("transform","scale(1.05)") })
-        // .on("mouseout",function(){ d3.select(this).transition().attr("transform","scale(1)") })
+        .on("mouseenter",function(){
+          d3.select(this)
+          .transition()
+          .duration(50)
+          .attr("transform","scale(1.05)")
+          d3.select(this).raise();
+        })
+        .on("mouseleave",function(){
+           d3.select(this)
+           .transition()
+           .duration(500)
+           .attr("transform","scale(1)")
+         })
         .on("click", d => this.click(d) )
         .append('path')                     // .attr("display", function (d) { return d.depth ? null : "none"; })  // Remove Center Pie
           .attr("d", this.arc)

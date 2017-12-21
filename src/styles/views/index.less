@@ -32,6 +32,10 @@
 .chart-label {
   .no-select;
   cursor: pointer;
+  &.selected {
+     .BoxShadowHelper(5);
+     border-bottom: 5px solid @color-4;
+  }
 }
 .chart.toggleSVG {
   .chart-layout-container {

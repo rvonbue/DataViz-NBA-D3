@@ -18,8 +18,7 @@ let BaseChart = Backbone.View.extend({
     return {w: this.$el.width(), h: this.$el.height() };
   },
   resize: function () {
-    this.setSize();
-    console.log("SIZE:::", this.size);
+    this.size =  { w:resize.width, h: resize.height };
     this.svg
       .selectAll("g, text")
       .data([])

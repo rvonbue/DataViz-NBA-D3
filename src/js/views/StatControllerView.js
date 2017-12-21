@@ -59,20 +59,24 @@ let StatControllerView = Backbone.View.extend({
     if (this.selectedView) this.selectedView.resize(resize);
   },
   showChart: function (d) {
+    let currentTarget = $(d.currentTarget);
+
     this.unsetSelectedChart();
-    this.setSelectedChart($(d.currentTarget).index());
+    this.setSelectedChart(currentTarget.index(), currentTarget);
     if (!this.selectedView.rendered) {
       this.chartLayoutContainerEl.append(this.selectedView.render().el);
       this.selectedView.start(this.data);
     }
   },
-  setSelectedChart: function (index) {
+  setSelectedChart: function (index, currentTarget) {
     this.selectedView = this.childViews[index];
     this.selectedView.show();
+    currentTarget.addClass("selected");
   },
   unsetSelectedChart: function () {
     if (!this.selectedView) return;
     this.selectedView.hide();
+    this.chartLabelContainerEl.find(".selected").removeClass("selected");
   },
   render: function () {
     this.chartLayoutContainerEl = $("<div class='stat-view-container'></div>");

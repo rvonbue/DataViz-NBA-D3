@@ -7,12 +7,6 @@ import ScatterPlotTemplate from "./html/ScatterPlotHoverLabel.html";
 import ChartLabelTemplate from "./html/chartTitle.html";
 import BaseChart from "./BaseChart";
 
-d3.selection.prototype.moveToFront = function() {
-      return this.each(function(){
-        this.parentNode.appendChild(this);
-      });
-    };
-
 let ScatterPlot = BaseChart.extend({
   className: BaseChart.prototype.className + " scatter-plot",
   label: "Scatter Plot",
@@ -25,9 +19,10 @@ let ScatterPlot = BaseChart.extend({
     this.size = this.setSize();
     this.createSvg();
     this.buildChart();
+    this.animate();
   },
   resize: function (resize) {
-    this.size = this.setSize();
+    this.size =  { w:resize.width, h: resize.height };
 
     this.svg
       .selectAll("g, text")
@@ -37,6 +32,7 @@ let ScatterPlot = BaseChart.extend({
       .attr("height", this.size.h);
 
     this.buildChart();
+    this.animate();
   },
   getThreePointData: function (dataDump) {
     let objKey = _.keys(dataDump);  // data dump return POJO with one value an array
@@ -62,61 +58,76 @@ let ScatterPlot = BaseChart.extend({
     this.data = simpleData;
   },
   buildChart: function () {
-    let elemEnter = this.svg.selectAll("g")
-       .data(this.data)
-       .enter().append("g")
-       .attr("class", "chartPoints");
-
     this.viewScaleX = this.getScaleX(this.data, "fg3Pct");
     this.viewScaleY = this.getScaleY(this.data, "fG3M");
+
+    this.chartPointsSVG = this.svg.selectAll("g")
+       .data(this.data)
+       .enter().append("g")
+       .attr("class", "zoomPoint")
+       .append("g")
+       .attr("class", "chartPoints")
+       .each((d) => { d.initPos = {x: this.viewScaleX(d.fg3Pct), y: this.viewScaleY(d.fG3M)}; })
+       .attr("transform", (d) => { return this.getTranslation( d.initPos.x, d.initPos.y ); })
+       .attr("opacity", 0)
+       .call(this.getDragBehavior())
 
     this.addAxesX("3-Point Percentage");
     this.addAxesY("3-Pointers Made");
     this.addToolTip();
     this.addZoom();
-    this.addShapeSVG(elemEnter, this.viewScaleX, this.viewScaleY);
-    this.addTextSVG(elemEnter);
+    this.addShapeSVG(this.chartPointsSVG, this.viewScaleX, this.viewScaleY);
+    this.addTextSVG(this.chartPointsSVG);
+  },
+  animate: function () {
+    this.animateGroupEnd();
+    this.animateCircleEnd();
+    this.animateText();
+  },
+  animateGroupEnd: function () {
+    this.chartPointsSVG
+      .attr("transform", (d,i) => { return this.getTranslation( 0, this.size.h ); })
+      .transition()
+        .duration( d => { return this.getAnimationDuration(this.viewScaleX(d.fg3Pct) * 1.5); })
+        .attr("transform", d => { return this.getTranslation( d.initPos.x, d.initPos.y ); })
+        .attr("opacity", 1)
+  },
+  animateCircleEnd: function () {
+    let r = Math.min((this.size.w / 90), 10);
+
+    this.circleSVG
+      .transition()
+        .duration( (d) => { return this.getAnimationDuration(this.viewScaleX(d.fg3Pct) * 1.5); })
+        .attr("r", r)
+        .attr("opacity", 1)
+        .style("fill","#ff6600")
+        .style("stroke-width", 1);
+
+  },
+  animateText: function () {
+    this.playerTextSVG
+      .transition()
+        .delay((d) => { return this.getAnimationDuration(this.viewScaleX(d.fg3Pct) * 2); })
+        .duration( (d) => { return 500; })
   },
   addShapeSVG: function (elemEnter) {
     let r = Math.min((this.size.w / 90), 10);
-    let self = this;
 
-    let circle = elemEnter.append("circle")
-      .attr("r", 0 )
+    this.circleSVG = elemEnter.append("circle")
+      .attr("r", r )
       .attr("stroke", "#000000")
       .attr("class", "circleH")
-      .style("stroke-width",0)
-      .each((d) => { d.initPos = {x: self.viewScaleX(d.fg3Pct), y: self.viewScaleY(d.fG3M)}; })
-      .attr("transform", (d) => { return self.getTranslation( 0, d.initPos.y ); })
-      .attr("fill", "#00FF00")
-      .attr("opacity", 1)
-      .call(this.getDragBehavior())
+      .style("stroke-width",1)
+      .style("fill","#00FF00")
       .on('mouseover', this.tip.show)
       .on('mouseout', this.tip.hide);
-
-    circle
-      .transition()
-      .duration( (d) => { return self.getAnimationDuration(self.viewScaleX(d.fg3Pct) * 2); })
-      .attr("r", r)
-      .attr("transform", (d) => { return  self.getTranslation( d.initPos.x, d.initPos.y ); })
-      .style("fill","#ff6600")
-      .style("stroke-width", 1);
-
   },
   addTextSVG: function (elemEnter) {
-    let self = this;
-
-    elemEnter.append("text")
+    this.playerTextSVG = elemEnter.append("text")
       .text(function(d){ return d.playerName.split(" ")[1] }) // Last Name
-      .attr("text-anchor", "middle").attr("font-size", "12").attr("opacity", 0)
-      .attr("transform", function (d) {
-        return self.getTranslation( self.viewScaleX(d.fg3Pct), self.viewScaleY(d.fG3M) - self.margin.textTop );
-      })
-      .transition()
-      .delay((d) => { return self.getAnimationDuration(self.viewScaleX(d.fg3Pct) * 2); })
-      .duration( (d) => { return 500; })
-      .attr("opacity", 1);
-
+      .attr("text-anchor", "middle").attr("font-size", "12").attr("opacity", 1)
+      .attr("class", "playerText")
+      .attr("dy", () => -this.margin.textTop);
   },
   addToolTip: function () {
     if (this.tip) return;
@@ -138,12 +149,11 @@ let ScatterPlot = BaseChart.extend({
     this.svg.call(zoom);
   },
   zoomed: function () {
-    this.svg.selectAll("g.chartPoints").attr("transform", d3.event.transform);
+    this.svg.selectAll("g.zoomPoint").attr("transform", d3.event.transform);
     this.svg.select("g.axisX").call(this.axisX.scale(d3.event.transform.rescaleX(this.viewScaleX)));
     this.svg.select("g.axisY").call(this.axisY.scale(d3.event.transform.rescaleY(this.viewScaleY)));
   },
   onDragStart: function () {
-    console.log("this", this);
     d3.select(this).raise();
     $("body").addClass("hide-tooltip");
   },
