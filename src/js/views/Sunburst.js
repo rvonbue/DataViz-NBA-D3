@@ -8,6 +8,7 @@ import teamNameTemplate from "./html/addTeamNameTemplate.html";
 let Sunburst = BaseChart.extend({
   className: BaseChart.prototype.className + " sunburst",
   label: "Sunburst Chart",
+  description: "NBA Rosters",
   events: {
     "click .team-abbreviation-container": "destroyElRemoveTeam",
     "click .team-name": "clickSelectTeam",
@@ -15,9 +16,6 @@ let Sunburst = BaseChart.extend({
     "click .chart-label": "showHideChart"
   },
   initialize: function (options) {
-    _.extend(this.events, BaseChart.prototype.events);
-    console.log("this.className ", this.className );
-    this.addListeners();
     _.bindAll(this, "destroyElRemoveTeam", "clickSelectTeam", "resetChart");
   },
   destroyElRemoveTeam: function (d) {
@@ -302,10 +300,8 @@ let Sunburst = BaseChart.extend({
      this.isAllDataLoaded();
    },
    render: function () {
-     this.$el.append(ChartLabelTemplate({ label: this.label, description: "Coach and player rosters" }))
-     this.$el.append(SunburstOptionsTemplate({ teamList: NBA.teams }));
-     this.chartLayoutContainerEl = $(`<div class='chart-layout-container'></div>`);
-     this.$el.append(this.chartLayoutContainerEl);
+     BaseChart.prototype.render.apply(this, arguments);
+     this.$el.prepend(SunburstOptionsTemplate({ teamList: NBA.teams }));
      return this;
    }
 });

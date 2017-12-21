@@ -6,25 +6,20 @@ window.d3 = d3;
 window.util = util;
 
 let BaseChart = Backbone.View.extend({
-  className: "chart toggleSVG",
-  events: {
-    "click .chart-label": "showHideChart"
-  },
-  initialize: function (options) { },
-  addListeners: function () {
-    $( window ).resize(_.bind( _.debounce(this.resizeChart, 200), this));
-  },
-  showHideChart: function () {
-    this.$el.toggleClass("toggleSVG");
-  },
+  className: "chart",
+  buildLabels: false,
+  rendered: false,
+  hide: function () { this.$el.hide(); },
+  show: function () { this.$el.show(); },
   setSize: function () {
     return this.getWidthHeight();
   },
   getWidthHeight: function () {
     return {w: this.$el.width(), h: this.$el.height() };
   },
-  resizeChart: function () {
+  resize: function () {
     this.setSize();
+    console.log("SIZE:::", this.size);
     this.svg
       .selectAll("g, text")
       .data([])
@@ -77,7 +72,12 @@ let BaseChart = Backbone.View.extend({
       .duration(function () { return 1500;})
       .attr("opacity", 1);
   },
-  render: function () { return this; }
+  render: function () {
+    if ( this.buildLabels ) this.$el.append(ChartLabelTemplate({ label: this.label, description: this.description }));
+    this.rendered = true;
+    this.chartLayoutContainerEl = $(`<div class='chart-layout-container'></div>`);
+    this.$el.append(this.chartLayoutContainerEl);
+    return this; }
 });
 
 module.exports = BaseChart;

@@ -15,18 +15,27 @@ d3.selection.prototype.moveToFront = function() {
 
 let ScatterPlot = BaseChart.extend({
   className: BaseChart.prototype.className + " scatter-plot",
+  label: "Scatter Plot",
+  description: "3-point Shooting",
   initialize: function(){
-     _.extend(this.events, BaseChart.prototype.events);
-     this.margin = {top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0};
-     this.addListeners();
-   },
-   showHideChart: function () {
-     this.$el.toggleClass("toggleSVG");
+     this.margin = { top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0 };
    },
   start: function (data) {
     this.getThreePointData(data);
     this.size = this.setSize();
     this.createSvg();
+    this.buildChart();
+  },
+  resize: function (resize) {
+    this.size = this.setSize();
+
+    this.svg
+      .selectAll("g, text")
+      .data([])
+      .exit().remove()
+      .attr("width", this.size.w)
+      .attr("height", this.size.h);
+
     this.buildChart();
   },
   getThreePointData: function (dataDump) {
@@ -214,9 +223,7 @@ let ScatterPlot = BaseChart.extend({
       .attr("height", this.size.h);
   },
   render: function () {
-    this.$el.append(ChartLabelTemplate({ label: "Scatter Plot", description: "3-point Shooting" }));
-    this.chartLayoutContainerEl = $(`<div class='chart-layout-container'></div>`);
-    this.$el.append(this.chartLayoutContainerEl);
+    BaseChart.prototype.render.apply(this, arguments);
     return this;
   }
 });

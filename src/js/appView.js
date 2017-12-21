@@ -17,7 +17,6 @@ let AppView = Backbone.View.extend({
     this.$el.append(template);
     let statControllerView  = new StatControllerView();
     this.$el.append(statControllerView.render().el);
-    statControllerView.start();
     return this;
   }
 });
