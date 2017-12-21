@@ -48,8 +48,8 @@ module.exports = {
         loader: "url-loader?limit=4096"
       },
       {
-        test: /\.json$/,
-        loader: 'json-loader'
+        test: /\.json($|\?)/,
+        use: 'json-loader'
       }
     ]
   },

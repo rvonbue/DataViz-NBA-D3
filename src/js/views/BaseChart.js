@@ -6,9 +6,16 @@ window.d3 = d3;
 window.util = util;
 
 let BaseChart = Backbone.View.extend({
+  className: "chart toggleSVG",
+  events: {
+    "click .chart-label": "showHideChart"
+  },
   initialize: function (options) { },
   addListeners: function () {
     $( window ).resize(_.bind( _.debounce(this.resizeChart, 200), this));
+  },
+  showHideChart: function () {
+    this.$el.toggleClass("toggleSVG");
   },
   setSize: function () {
     return this.getWidthHeight();
@@ -67,16 +74,8 @@ let BaseChart = Backbone.View.extend({
   addFadeIn: function (d3Obj) {
     d3Obj.attr("opacity", 0)
       .transition()
-      .duration(function () {
-        return 1500;
-      })
-     .attr("opacity", 1);
-  },
-  createSvg: function () {
-    this.svg = d3.select(this.$el[0])
-      .append("svg")
-      .attr("width", this.size.w)
-      .attr("height", this.size.h);
+      .duration(function () { return 1500;})
+      .attr("opacity", 1);
   },
   render: function () { return this; }
 });

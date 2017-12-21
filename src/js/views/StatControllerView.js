@@ -10,30 +10,45 @@ let StatControllerView = Backbone.View.extend({
   id: "stat-view",
   initialize: function (options) {
     this.childViews = [];
+    this.childViewsDataPending = [];
+    this.getPlayerStats();
   },
   start: function () {
-    NBA.stats.playerStats().then((res, err) => this.sortPlayerStats(res));
-    // this.loadChart();
+    this.loadChart();
+  },
+  getPlayerStats: function () {
+    let self = this;
+
+    NBA.stats.playerStats().then(function (res, err) {
+        self.sortPlayerStats(res);
+    });
   },
   sortPlayerStats: function (dataDump) {
     this.data = dataDump;
-    this.loadChart();
+    this.childViewsDataPending.forEach( (view)=> {
+      view.start(dataDump);
+    });
   },
   loadScatterPlot: function (data) {
-    let scatterPlot = new ScatterPlot({ data: data });
+    let scatterPlot = new ScatterPlot();
     this.$el.append(scatterPlot.render().el);
-    scatterPlot.start();
-    this.childViews.push(scatterPlot);
+
+    if (!this.data) this.childViewsDataPending.push(scatterPlot);
   },
   loadSunburst: function () {
     let sunburst = new Sunburst();
     this.$el.append(sunburst.render().el);
-    sunburst.start();
     this.childViews.push(sunburst);
   },
   loadChart: function (simpleData) {
     this.loadScatterPlot(this.data);
     this.loadSunburst();
+    this.startCharts();
+  },
+  startCharts: function () {
+    this.childViews.forEach( (view)=> {
+      view.start();
+    });
   },
   render: function () {
     return this;

@@ -3,21 +3,29 @@ import commandController from "../controllers/commandController";
 import d3tip from "d3-tip";
 import d3zoom from "d3-zoom";
 import util from "../util";
-import ScatterPlotTemplate from "./ScatterPlot.html";
+import ScatterPlotTemplate from "./html/ScatterPlotHoverLabel.html";
 import ChartLabelTemplate from "./html/chartTitle.html";
 import BaseChart from "./BaseChart";
 
+d3.selection.prototype.moveToFront = function() {
+      return this.each(function(){
+        this.parentNode.appendChild(this);
+      });
+    };
+
 let ScatterPlot = BaseChart.extend({
-  className: "chart scatter-plot",
-  initialize: function (options) {
-    this.data = options.data;
-    this.getThreePointData(options.data);
-    this.margin = {top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0};
-    this.addListeners();
-  },
-  start: function () {
+  className: BaseChart.prototype.className + " scatter-plot",
+  initialize: function(){
+     _.extend(this.events, BaseChart.prototype.events);
+     this.margin = {top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0};
+     this.addListeners();
+   },
+   showHideChart: function () {
+     this.$el.toggleClass("toggleSVG");
+   },
+  start: function (data) {
+    this.getThreePointData(data);
     this.size = this.setSize();
-    console.log("SIZE:", this.size);
     this.createSvg();
     this.buildChart();
   },
@@ -126,6 +134,7 @@ let ScatterPlot = BaseChart.extend({
     this.svg.select("g.axisY").call(this.axisY.scale(d3.event.transform.rescaleY(this.viewScaleY)));
   },
   onDragStart: function () {
+    console.log("this", this);
     d3.select(this).raise();
     $("body").addClass("hide-tooltip");
   },
@@ -198,8 +207,16 @@ let ScatterPlot = BaseChart.extend({
     axisGY.call(this.axisY);
     this.addFadeIn(axisGY);
   },
+  createSvg: function () {
+    this.svg = d3.select(this.chartLayoutContainerEl[0]) //passing in this.chartLayoutContainerEl[0]  doens't work for some reason
+      .append("svg")
+      .attr("width", this.size.w)
+      .attr("height", this.size.h);
+  },
   render: function () {
-    this.$el.append(ChartLabelTemplate({ label: "Scatter Plot" }));
+    this.$el.append(ChartLabelTemplate({ label: "Scatter Plot", description: "3-point Shooting" }));
+    this.chartLayoutContainerEl = $(`<div class='chart-layout-container'></div>`);
+    this.$el.append(this.chartLayoutContainerEl);
     return this;
   }
 });

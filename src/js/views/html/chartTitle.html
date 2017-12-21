@@ -1,4 +1,6 @@
-<div class='leyenda'>
+<div class='chart-label'>
   <div class="chart-title"><%= label %></div>
-  <div> Interactive NBA Rosters</div>
+  <div> <%  if (typeof description !== "undefined") { %></div>
+    <%= description %>
+  <div> <%  } %></div>
 </div>

@@ -1,29 +1,31 @@
 import BaseChart from "./BaseChart";
 import dataSunburst from "../data/sunburst";
-import SunburstTemplate from "./sunburst.html";
+import SunburstOptionsTemplate from "./sunburst.html";
 import ChartLabelTemplate from "./html/chartTitle.html";
 import utils from "../util";
 import teamNameTemplate from "./html/addTeamNameTemplate.html";
 
 let Sunburst = BaseChart.extend({
-  className: "chart sunburst",
+  className: BaseChart.prototype.className + " sunburst",
   label: "Sunburst Chart",
-  initialize: function (options) {
-    this.addListeners();
+  events: {
+    "click .team-abbreviation-container": "destroyElRemoveTeam",
+    "click .team-name": "clickSelectTeam",
+    "click #load-teams": "resetChart",
+    "click .chart-label": "showHideChart"
   },
-  addListeners: function () {
-    this.$el.on("click", ".team-name", (d) => this.clickSelectTeam(d));
-    this.$el.on("click", ".team-abbreviation-container", (d) => this.destroyElRemoveTeam(d));
-    this.$el.on("click", "#load-teams", (d) => this.resetChart(d));
+  initialize: function (options) {
+    _.extend(this.events, BaseChart.prototype.events);
+    console.log("this.className ", this.className );
+    this.addListeners();
+    _.bindAll(this, "destroyElRemoveTeam", "clickSelectTeam", "resetChart");
   },
   destroyElRemoveTeam: function (d) {
     let el = $(d.currentTarget);
     let array = this.clickData.teams; // Test
     let search_term = el.find(".team-abbreviation:first").text();
 
-    console.log("this.clickData.teams len", this.clickData.teams.length);
     this.clickData.teams = _.filter(this.clickData.teams, d => { return d !== search_term; });
-  console.log("this.clickData.teams len", this.clickData.teams.length);
     el.remove();
   },
   resetChart: function () {
@@ -32,9 +34,16 @@ let Sunburst = BaseChart.extend({
       .data([])
       .exit().remove();
 
+    this.resetVars();
+    this.loadDataNBA();
+  },
+  resetVars: function () {
+    this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
     this.dataNBA.children = [];
     this.totalLoaded = 0;
-    this.loadDataNBA();
+    this.animating = false;
+    this.depth = 0;
+    this.setScale();
   },
   clickSelectTeam: function (d) {
     let el = $(d.currentTarget);
@@ -49,12 +58,8 @@ let Sunburst = BaseChart.extend({
     }));
 
     this.clickData.teams.push(abbreviation);
-    this.showLoadTeams();
+
     setTimeout(function () { dropdownContentEl.removeClass("pointer-events-none"); }, 250);
-  },
-  showLoadTeams: function () {
-    this.$el.find("#load-teams")
-            .addClass("show");
   },
   start: function () {
     if ( this.isReady() == false ) {
@@ -62,7 +67,7 @@ let Sunburst = BaseChart.extend({
       return;
     }
     this.initSize();
-    this.setVars();
+    this.initVars();
     this.createSvg();
     this.setScale();
     this.firstBuild(dataSunburst);
@@ -70,7 +75,6 @@ let Sunburst = BaseChart.extend({
     this.clickData.teams.forEach( (abbr)=> {
       this.addNewTeam(abbr);
     });
-    console.log("this.clickData.teams len",);
   },
   addNewTeam: function (abbreviation) {
     this.teamContainerEl.append(teamNameTemplate({
@@ -86,11 +90,11 @@ let Sunburst = BaseChart.extend({
     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
     this.size = utils.getWidthHeight(this.$el);
     this.size.w = this.size.h = Math.min(this.size.w, this.size.h) * 0.9;
+    this.size.radius = (this.size.w / 2) - 15; // Magin numnber add margin so text spill out is visible
     console.log("SIZE::", this.size);
   },
-  setVars: function () {
+  initVars: function () {
     this.depth = 0; // used for determing what click level User is at
-    this.size.radius = (this.size.w / 2) - 15; // Magin numnber add margin so text spill out is visible
     this.animating = false;
     this.clickData = { teams:[] };
     this.dataNBA = { name: "NBA", children:[] };
@@ -145,8 +149,8 @@ let Sunburst = BaseChart.extend({
       .data(this.root.descendants()).enter()
       .append('g')
         .attr("class", "ring-slice")
-        .on("mouseover",function(){ d3.select(this).transition().attr("transform","scale(1.05)") })
-        .on("mouseout",function(){ d3.select(this).transition().attr("transform","scale(1)") })
+        // .on("mouseover",function(){ d3.select(this).transition().attr("transform","scale(1.05)") })
+        // .on("mouseout",function(){ d3.select(this).transition().attr("transform","scale(1)") })
         .on("click", d => this.click(d) )
         .append('path')                     // .attr("display", function (d) { return d.depth ? null : "none"; })  // Remove Center Pie
           .attr("d", this.arc)
@@ -159,7 +163,7 @@ let Sunburst = BaseChart.extend({
       .append("text")
       .attr("class", (d)=> utils.getRingClasses(d) )
       .attr("fill", d => utils.getFontColor(d))
-      .text( (d)=> { return  d.parent ? utils.toUpperCase(d.data.name) : " "; });
+      .text( (d)=> { return  d.parent ? utils.toUpperCase(d.data.name) : " "; })
 
     this.updateTextTransform(svgText);
     this.updateTextAttrs(svgText);
@@ -236,7 +240,7 @@ let Sunburst = BaseChart.extend({
     this.animating = false;
   },
   createSvg: function () {
-    this.svg = d3.select(this.$el[0])
+    this.svg = d3.select(this.chartLayoutContainerEl[0])
       .append("svg")
       .attr("class", "sunburst")
       .attr("width", this.size.w)
@@ -244,21 +248,14 @@ let Sunburst = BaseChart.extend({
       .append('g')  // <-- 3
       .attr('transform', 'translate(' + this.size.w / 2 + ',' + this.size.h / 2 + ')');  //
   },
-  render: function () {
-    this.$el.append(ChartLabelTemplate({ label: this.label }))
-    this.$el.append(SunburstTemplate({ teamList: NBA.teams }));
-    return this;
-  },
   loadDataNBA: function () {
      let self = this;
-     this.clickData.teams = this.clickData.teams.length > 0 ? this.clickData.teams : ["GSW", "HOU"];
+     if ( this.clickData.teams.length === 0 )  return;
 
      this.nbaTeams = _.map(this.clickData.teams, function (val, i) {
        return _.find(NBA.teams, function(obj){ return obj.abbreviation === val });
      })
 
-    //  console.log("this.nbaTeams", this.nbaTeams);
-    // console.log("this.this.clickData.teams", this.clickData.teams);
      this.nbaTeams.forEach( (d, i)=> {
        NBA.stats.commonTeamRoster({"TeamID": d.teamId }).then(function (res, err) {
          self.teamRosterLoaded(d, res);
@@ -300,11 +297,16 @@ let Sunburst = BaseChart.extend({
    },
    teamRosterLoaded: function (teamData, data) {
      let self = this;
-     this.dataNBA.children.push(
-       this.getDataPoint(teamData.abbreviation, data)
-     );
+     this.dataNBA.children.push( this.getDataPoint(teamData.abbreviation, data));
      // console.log(JSON.stringify(this.dataNBA, null, 4));
      this.isAllDataLoaded();
+   },
+   render: function () {
+     this.$el.append(ChartLabelTemplate({ label: this.label, description: "Coach and player rosters" }))
+     this.$el.append(SunburstOptionsTemplate({ teamList: NBA.teams }));
+     this.chartLayoutContainerEl = $(`<div class='chart-layout-container'></div>`);
+     this.$el.append(this.chartLayoutContainerEl);
+     return this;
    }
 });
 

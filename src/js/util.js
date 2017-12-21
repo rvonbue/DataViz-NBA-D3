@@ -95,7 +95,8 @@ let util = {
         break;
       }
       case 1: {
-        angle = (angle >= 180) ? angle + 180 : angle;
+        console.log("angle", angle);
+        angle = (angle >= 180) ? angle - 180 : angle;
         break;
       }
       case 2: {
