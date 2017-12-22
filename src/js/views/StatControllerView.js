@@ -5,6 +5,8 @@ import ScatterPlot from "./ScatterPlot";
 import Sunburst from "./Sunburst";
 import ChartLabelTemplate from "./html/chartTitle.html";
 window.NBA = NBA;
+import util from "../util.js";
+import DataParserLoader from "../models/DataParser";
 
 let StatControllerView = Backbone.View.extend({
   id: "stat-view",
@@ -17,7 +19,10 @@ let StatControllerView = Backbone.View.extend({
       new Sunburst(),
       new ScatterPlot()
     ];
-    this.getPlayerStats();
+
+    this.DataParserLoader = new DataParserLoader();
+    this.DataParserLoader.once("change:playerStats", ()=> this.start() );
+    this.DataParserLoader.start();
     $( window ).resize(_.bind( _.debounce(this.resize, 200), this));
   },
   start: function () {
@@ -36,17 +41,18 @@ let StatControllerView = Backbone.View.extend({
     this.chartLayoutContainerEl.height(resize.height);
     return resize;
   },
-  getPlayerStats: function () {
-    let self = this;
-
-    NBA.stats.playerStats().then(function (res, err) {
-        self.sortPlayerStats(res);
-    });
-  },
-  sortPlayerStats: function (dataDump) {
-    this.data = dataDump;
-    this.start();
-  },
+  // getPlayerStats: function () {
+  //   let self = this;
+  //
+  //   NBA.stats.playerStats().then(function (res, err) {
+  //       self.dataLoaded(res);
+  //   });
+  // },
+  // dataLoaded: function (dataDump) {
+  //   this.data = dataDump;
+  //   util.buildTeamColors();
+  //   this.start();
+  // },
   loadChart: function (simpleData) {
     // this.loadScatterPlot(this.data);
     // this.loadSunburst();
@@ -63,10 +69,20 @@ let StatControllerView = Backbone.View.extend({
 
     this.unsetSelectedChart();
     this.setSelectedChart(currentTarget.index(), currentTarget);
-    if (!this.selectedView.rendered) {
-      this.chartLayoutContainerEl.append(this.selectedView.render().el);
-      this.selectedView.start(this.data);
-    }
+
+    if (!this.selectedView.rendered) this.firstRender();
+  },
+  firstRender: function () {
+    this.chartLayoutContainerEl.append(this.selectedView.render().el);          //append chart container
+
+    // let dataLoadFunc = this.selectedView.dataLoadFunc;
+    // let data = this.DataParserLoader[dataLoadFunc]();
+    //
+    // console.log("Data::", data);
+    // if ( data ) {    //check if data is available
+      this.selectedView.start();
+    // }
+
   },
   setSelectedChart: function (index, currentTarget) {
     this.selectedView = this.childViews[index];

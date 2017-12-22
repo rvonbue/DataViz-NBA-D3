@@ -3,7 +3,7 @@ import commandController from "../controllers/commandController";
 import d3tip from "d3-tip";
 import d3zoom from "d3-zoom";
 import util from "../util";
-import ScatterPlotTemplate from "./html/ScatterPlotHoverLabel.html";
+import ScatterPlotHoverTemplate from "./html/ScatterPlotHoverLabel.html";
 import ChartLabelTemplate from "./html/chartTitle.html";
 import BaseChart from "./BaseChart";
 
@@ -11,15 +11,21 @@ let ScatterPlot = BaseChart.extend({
   className: BaseChart.prototype.className + " scatter-plot",
   label: "Scatter Plot",
   description: "3-point Shooting",
+  dataLoadFunc: "getThreePointData",
+  dataName: "threePointData",
   initialize: function(){
      this.margin = { top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0 };
    },
-  start: function (data) {
-    this.getThreePointData(data);
+  start: function () {
+    this.data = this.getData();
+    console.log("this.data", this.data);
     this.size = this.setSize();
     this.createSvg();
     this.buildChart();
     this.animate();
+  },
+  getData: function () {
+    return commandController.request(commandController.GET_3POINT);
   },
   resize: function (resize) {
     this.size =  { w: resize.width, h: resize.height };
@@ -36,29 +42,6 @@ let ScatterPlot = BaseChart.extend({
     this.buildChart();
     this.animate();
   },
-  getThreePointData: function (dataDump) {
-    let objKey = _.keys(dataDump);  // data dump return POJO with one value an array
-    let sorted3pa = _.sortBy(dataDump[objKey], "fg3mRank");
-
-    sorted3pa.forEach( function (d, i) {
-      if ( d.gpRank > 300 ) sorted3pa.splice(i, 1);  // remove players who don't play alot of games
-    });
-    sorted3pa.length = 50;  // get top 30 players
-
-    let simpleData = [];
-    _.each(sorted3pa, function (player) {
-      simpleData.push(
-        {
-          playerName: player.playerName,
-          fG3A: player.fG3A,
-          fG3M: player.fG3M,
-          fg3Pct: player.fg3Pct,
-          fg3PctRank: player.fg3PctRank,
-        }
-      )
-    });
-    this.data = simpleData;
-  },
   buildChart: function () {
     this.viewScaleX = this.getScaleX(this.data, "fg3Pct");
     this.viewScaleY = this.getScaleY(this.data, "fG3M");
@@ -69,7 +52,15 @@ let ScatterPlot = BaseChart.extend({
        .attr("class", "zoomPoint")
        .append("g")
        .attr("class", "chartPoints")
-       .each((d) => { d.initPos = {x: this.viewScaleX(d.fg3Pct), y: this.viewScaleY(d.fG3M)}; })
+       .each((d) => {
+         d.initPos = {x: this.viewScaleX(d.fg3Pct), y: this.viewScaleY(d.fG3M)};
+         let fillstyle = util.getTeamColorFromAbbr(d.teamAbbreviation, 0 );
+         d.color = {
+           text: util.getTextColor(d, fillstyle),
+           fill: fillstyle,
+           stroke: util.getTeamColorFromAbbr(d.teamAbbreviation, 1)
+         };
+        })
        .attr("transform", (d) => { return this.getTranslation( d.initPos.x, d.initPos.y ); })
        .attr("opacity", 0)
        .call(this.getDragBehavior())
@@ -102,7 +93,8 @@ let ScatterPlot = BaseChart.extend({
         .duration( (d) => { return this.getAnimationDuration(this.viewScaleX(d.fg3Pct) * 1.5); })
         .attr("r", r)
         .attr("opacity", 1)
-        .style("fill","#ff6600")
+        .style("fill",(d) => { return d.color.fill; })
+        .style("stroke",(d) => { return d.color.stroke; })
         .style("stroke-width", 1);
 
   },
@@ -136,7 +128,7 @@ let ScatterPlot = BaseChart.extend({
 
     this.tip = d3tip()
       .attr('class', 'd3-tip')
-      .html(function(d) { return ScatterPlotTemplate(d) })
+      .html(function(d) { return ScatterPlotHoverTemplate(d) })
       .offset([-5, 0]);
 
     this.svg.call(this.tip);

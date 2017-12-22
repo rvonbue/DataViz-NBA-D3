@@ -10,8 +10,9 @@ let util = {
   getFontSize: function (tScale) {
     return tScale + "%";
   },
-  getFontColor: function (d) {
-    let rgbVal = _.reduce(d3Color(this.getFillStyle(d)), function (memo, num) {
+  getTextColor: function (d, fillstyle) {
+    fillstyle = fillstyle ? fillstyle : this.getFillStyle(d);
+    let rgbVal = _.reduce(d3Color(fillstyle), function (memo, num) {
       return memo + num;
     });
     return rgbVal >= ((255 * 3) / 2) ? "#000" : "#fff";
@@ -141,5 +142,4 @@ let util = {
 //   n.getComputedTextLength();
 // });
 // console.log(maxTextWidth);
-
 module.exports = util;
