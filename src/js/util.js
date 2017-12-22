@@ -7,7 +7,7 @@ let util = {
   getWidthHeight: function (el) {
     return {w: el.width(), h: el.height() };
   },
-  getFontSize: function (depth, tScale) {
+  getFontSize: function (tScale) {
     return tScale + "%";
   },
   getFontColor: function (d) {
@@ -43,9 +43,9 @@ let util = {
     let index = index = d.depth % 2 ? 0 : 1;
     return this.getTeamColor(d, index);
   },
-  buildTeamColors: function (teams) {
+  buildTeamColors: function () {
     let teamColors = {"nba": ["rgba(0,0,0,0)", "rgba(0,0,0,0)"]};
-    teams = NBA.teams
+    let teams = NBA.teams
 
     teams.forEach( function (team) {
       teamColors[team.abbreviation] =  _.map(getNbaColors(team.abbreviation), function (color) {return color.hex });
@@ -87,15 +87,22 @@ let util = {
     }, "");
     return name;
   },
-  computeTextRotation: function (d, x) {
-   let angle = (x((d.x0 + d.x1)/2) - Math.PI / 2) / Math.PI * 180;
-    switch(d.depth) {
+  computeTextRotation: function (d, x, currentDepthZoom) {
+
+    let angle = (x((d.x0 + d.x1)/2) - Math.PI / 2) / Math.PI * 180;
+
+    let depth = d.depth === currentDepthZoom ? 0 : d.depth;
+    let what = "Name: " +  d.data.name + "  depth: " + d.depth + "  angle: " + angle;
+
+    // if (depth === 1 || depth === 0 || depth === 2) console.log(what);
+
+
+    switch(depth) {
       case 0: {
         angle -= 90;
         break;
       }
       case 1: {
-        console.log("angle", angle);
         angle = (angle >= 180) ? angle - 180 : angle;
         break;
       }
@@ -114,8 +121,7 @@ let util = {
         break
       }
     }
-
-    d.data.angle = angle;
+    // if (depth === 1 || depth === 0 || depth === 2) console.log(angle);
     return angle; // labels as spokes
   },
   textFits: function (d, x, y) {

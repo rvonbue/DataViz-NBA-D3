@@ -26,6 +26,23 @@ let Sunburst = BaseChart.extend({
     this.clickData.teams = _.filter(this.clickData.teams, d => { return d !== search_term; });
     el.remove();
   },
+  resize: function (resize) {
+    this.svg
+      .selectAll("g")
+      .data([])
+      .exit().remove();
+
+    this.depth = 0; // used for determing what click level User is at
+    this.animating = false;
+
+    this.chartLayoutContainerEl.empty();
+    this.initSize({ w: resize.width, h: resize.height });
+    this.setScale();
+    this.createSvg();
+
+    this.computeArc(this.x, this.y);
+    this.buildChart();
+  },
   resetChart: function () {
     this.svg
       .selectAll("g")
@@ -84,12 +101,11 @@ let Sunburst = BaseChart.extend({
     let isReady = this.$el.width() >= 200 ? true : false;
     return isReady;
   },
-  initSize: function () {
+  initSize: function (size) {
     this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
-    this.size = utils.getWidthHeight(this.$el);
+    this.size = size ? size : utils.getWidthHeight(this.$el);
     this.size.w = this.size.h = Math.min(this.size.w, this.size.h) * 0.9;
     this.size.radius = (this.size.w / 2) - 15; // Magin numnber add margin so text spill out is visible
-    console.log("SIZE::", this.size);
   },
   initVars: function () {
     this.depth = 0; // used for determing what click level User is at
@@ -100,6 +116,7 @@ let Sunburst = BaseChart.extend({
   },
   firstBuild: function (data) {
     this.formatDataD3(data);
+    this.computeArc(this.x, this.y);
     this.buildChart();
   },
   isAllDataLoaded: function () {
@@ -119,23 +136,15 @@ let Sunburst = BaseChart.extend({
     this.partition = d3.partition();
     this.root = d3.hierarchy(data)  // Find the Root Node
        .sum(function(d) { return !d.children || d.children.length === 0 ? d.size : 0; }); // use 100% of arc
-
     this.partition(this.root);  // Calculate each arc
 
+  },
+  computeArc:  function (x,y) {
     this.arc = d3.arc()
       .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x0))); })
       .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x1))); })
       .innerRadius(function(d) { return Math.max(0, y(d.y0)); })
       .outerRadius(function(d) { return Math.max(0, y(d.y1)); });
-  },
-  updateTextTransform: function (svgSelection) {
-    svgSelection = svgSelection ? svgSelection : this.svg.selectAll("text");
-
-    svgSelection
-      .attr("transform",  (d)=> {
-        return utils.getTranslateRotate(this.arc.centroid(d),
-          utils.computeTextRotation(d, this.x));
-      });
   },
   buildChart: function () {
     utils.buildTeamColors(utils.getAllTeamNames(this.root));
@@ -177,21 +186,6 @@ let Sunburst = BaseChart.extend({
     this.updateTextTransform(svgText);
     this.updateTextAttrs(svgText);
   },
-  updateTextAttrs: function (svgText) {
-    svgText
-      .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth))
-      .attr("text-anchor", d => utils.getTextAnchorPosition(d, this.depth))
-      // .attr("dy", ".4em")
-      .attr("font-size", d => utils.getFontSize(this.depth, this.textScale(this.size.w)))
-      .attr("alignment-baseline", "middle")
-  },
-  shouldCancelClick: function (d) {
-    if (
-        (d.depth === 0 && this.depth === 0) ||  // if Im on level 1
-        (d.depth === this.depth) ||   // Is user on same level
-        this.animating === true) { return true; }  // am I still animating
-    return false;
-  },
   click: function (d) {
     if (this.shouldCancelClick(d)) return; // If clicking on middle circle while zoomed out do nothing
 
@@ -203,6 +197,7 @@ let Sunburst = BaseChart.extend({
       .attr("opacity", function (d) { return  0; });
 
     svgTextSelection = utils.getVisibleTextSelection(this.svg, d);
+    let popOutText = _.throttle( _.bind(this.popOutText, this), 100);
 
     this.svg.transition()
         .duration(750)
@@ -214,15 +209,38 @@ let Sunburst = BaseChart.extend({
         })
         .selectAll("path")
           .attrTween("d", function(d) { return function() { return arc(d); }; })
-          .on("end", (d, i )=> { this.popOutText(svgTextSelection, i) });
+          .on("end", (d, i )=> { popOutText(svgTextSelection) });
 
   },
-  popOutText: function (svgTextSelection, i) {
-    if (i !== 0 ) return;
+  shouldCancelClick: function (d) {
+    if (
+        (d.depth === 0 && this.depth === 0) ||  // if Im on level 1
+        (d.depth === this.depth) ||   // Is user on same level
+        this.animating === true) { return true; }  // am I still animating
+    return false;
+  },
+  popOutText: function (svgTextSelection) {
+    this.updateFirstRingText(svgTextSelection);
     this.updateTextTransform(svgTextSelection);
     this.updateTextAttrs(svgTextSelection);
-    this.updateFirstRingText(svgTextSelection);
     this.animateText(svgTextSelection);
+  },
+  updateTextTransform: function (svgSelection) {
+    svgSelection = svgSelection ? svgSelection : this.svg.selectAll("text");
+
+    svgSelection
+      .attr("transform",  (d)=> {
+        return utils.getTranslateRotate(this.arc.centroid(d),
+          utils.computeTextRotation(d, this.x, this.depth));
+      });
+  },
+  updateTextAttrs: function (svgText) {
+    svgText
+      .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth))
+      .attr("text-anchor", d => utils.getTextAnchorPosition(d, this.depth))
+      // .attr("dy", ".4em")
+      .attr("font-size", d => utils.getFontSize(this.textScale(this.size.w), this.depth))
+      .attr("alignment-baseline", "middle")
   },
   updateFirstRingText: function (svgTextSelection) {
     svgTextSelection
@@ -233,17 +251,17 @@ let Sunburst = BaseChart.extend({
       .attr("dx",  0)
       .attr("text-anchor", "middle")
       .attr("opacity", 1 )
-      .attr("transform", d => utils.getTranslateRotate(this.arc.centroid(d), 0 ))
-      .attr("font-size", ()=> {  return (100 + (this.depth * 25)) + "%"});
+      .attr("transform", d => utils.getTranslateRotate(this.arc.centroid(d), 0 ));
+      // .attr("font-size", ()=> {  return (100 + (this.depth * 25)) + "%"});
   },
   animateText: function (svgTextSelection) {
     svgTextSelection
-      .filter(function (d, i) { return i !== 0;})
+      // .filter(function (d, i) { return i !== 0;})
       .attr("dx", function (d) { return d.data.angleFlip ? -200 : 200 })
       .transition()
         .duration(350)
         .attr("opacity", 1)
-        .attr("font-size", ()=> utils.getFontSize(this.depth, this.textScale(this.size.w)))
+        .attr("font-size", ()=> utils.getFontSize(this.textScale(this.size.w),this.depth))
         .attr("dx", d => util.getTextOffsetDx(d, this.margin.textDx, this.depth) );
 
     this.animating = false;

@@ -22,12 +22,14 @@ let ScatterPlot = BaseChart.extend({
     this.animate();
   },
   resize: function (resize) {
-    this.size =  { w:resize.width, h: resize.height };
+    this.size =  { w: resize.width, h: resize.height };
 
     this.svg
       .selectAll("g, text")
       .data([])
-      .exit().remove()
+      .exit().remove();
+
+    this.svg
       .attr("width", this.size.w)
       .attr("height", this.size.h);
 
