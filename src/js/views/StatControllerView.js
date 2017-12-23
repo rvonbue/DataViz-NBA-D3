@@ -1,12 +1,13 @@
 import eventController from "../controllers/eventController";
 import commandController from "../controllers/commandController";
 const NBA = require("nba");
-import ScatterPlot from "./ScatterPlot";
-import Sunburst from "./Sunburst";
 import ChartLabelTemplate from "./html/chartTitle.html";
 window.NBA = NBA;
 import util from "../util.js";
 import DataParserLoader from "../models/DataParser";
+import ScatterPlot from "./charts/ScatterPlot";
+import Sunburst from "./charts/Sunburst";
+import BarChart from "./charts/BarChart";
 
 let StatControllerView = Backbone.View.extend({
   id: "stat-view",
@@ -17,7 +18,8 @@ let StatControllerView = Backbone.View.extend({
     _.bindAll(this, "showChart");
     this.childViews = [
       new Sunburst(),
-      new ScatterPlot()
+      new ScatterPlot(),
+      new BarChart()
     ];
 
     this.DataParserLoader = new DataParserLoader();

@@ -1,7 +1,7 @@
-import eventController from "../controllers/eventController";
-import commandController from "../controllers/commandController";
+import eventController from "../../controllers/eventController";
+import commandController from "../../controllers/commandController";
 import * as d3 from "d3";
-import util from "../util";
+import util from "../../util";
 window.d3 = d3;
 window.util = util;
 
@@ -9,6 +9,7 @@ let BaseChart = Backbone.View.extend({
   className: "chart",
   buildLabels: false,
   rendered: false,
+  description: "DEAFUTLKASD  ",
   hide: function () { this.$el.hide(); },
   show: function () { this.$el.show(); },
   setSize: function () {
@@ -16,6 +17,9 @@ let BaseChart = Backbone.View.extend({
   },
   getWidthHeight: function () {
     return {w: this.$el.width(), h: this.$el.height() };
+  },
+  select: function () {
+
   },
   resize: function () {
     this.size =  { w:resize.width, h: resize.height };

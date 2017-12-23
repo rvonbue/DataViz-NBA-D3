@@ -1,17 +1,15 @@
 import BaseChart from "./BaseChart";
-import commandController from "../controllers/commandController";
-import dataSunburst from "../data/sunburst";
+import commandController from "../../controllers/commandController";
+// import dataSunburst from "../data/sunburst";
 import SunburstOptionsTemplate from "./sunburst.html";
-import ChartLabelTemplate from "./html/chartTitle.html";
-import utils from "../util";
-import teamNameTemplate from "./html/addTeamNameTemplate.html";
+import ChartLabelTemplate from "../html/chartTitle.html";
+import utils from "../../util";
+import teamNameTemplate from "../html/addTeamNameTemplate.html";
 
 let Sunburst = BaseChart.extend({
   className: BaseChart.prototype.className + " sunburst",
   label: "Sunburst Chart",
   description: "NBA Rosters",
-  dataLoadFunc: "getTeamRosters",
-  dataName: "getTeamRosters",
   events: {
     "click .team-abbreviation-container": "destroyElRemoveTeam",
     "click .team-name": "clickSelectTeam",
@@ -29,40 +27,27 @@ let Sunburst = BaseChart.extend({
     this.clickData.teams = _.filter(this.clickData.teams, d => { return d !== search_term; });
     el.remove();
   },
-  resize: function (resize) {
+  removeAllGroups: function () {
     this.svg
       .selectAll("g")
       .data([])
       .exit().remove();
-
-    this.depth = 0; // used for determing what click level User is at
-    this.animating = false;
+  },
+  resize: function (resize) {
+    this.removeAllGroups();
 
     this.chartLayoutContainerEl.empty();
     this.initSize({ w: resize.width, h: resize.height });
     this.setScale();
     this.createSvg();
-
     this.computeArc(this.x, this.y);
     this.buildChart();
   },
   resetChart: function () {
-    this.svg
-      .selectAll("g")
-      .data([])
-      .exit().remove();
-
-    this.resetVars();
-    this.setTeamData(this.clickData.teams);
-    this.firstBuild(this.dataNBA);this.firstBuild(this.dataNBA);
-  },
-  resetVars: function () {
-    this.margin = {top: 20, right: 20, bottom: 35, left: 50, textTop: 15, textDx: 35, textPadding: 35 };
-    this.dataNBA.children = [];
-    this.totalLoaded = 0;
-    this.animating = false;
+    this.removeAllGroups();
     this.depth = 0;
-    this.setScale();
+    this.setTeamData(this.clickData.teams);
+    this.firstBuild(this.dataNBA);
   },
   clickSelectTeam: function (d) {
     let el = $(d.currentTarget);
@@ -134,8 +119,8 @@ let Sunburst = BaseChart.extend({
   setScale: function () {
      this.x = d3.scaleLinear().range([0, 2 * Math.PI]);
      this.y = d3.scaleSqrt().range([0, this.size.radius]).exponent(1.8);
-     this.textScale = d3.scaleLinear().domain([365, 800]).range([80,150]) //domain is max and min size of chart //range is max/min text size in percent
-     this.margin.textDx = this.margin.textDx * (this.textScale(this.size.w) / 100);
+     this.textScale = d3.scaleLinear().domain([365, 800]).range([60,120]) //domain is max and min size of chart //range is max/min text size in percent
+     this.margin.textDx = this.margin.textDx * (this.textScale(this.size.w) / 75);
   },
   formatDataD3: function (data) {
     let x = this.x,  y = this.y;

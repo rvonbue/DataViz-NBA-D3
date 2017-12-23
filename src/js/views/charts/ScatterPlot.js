@@ -1,10 +1,10 @@
-import eventController from "../controllers/eventController";
-import commandController from "../controllers/commandController";
+import eventController from "../../controllers/eventController";
+import commandController from "../../controllers/commandController";
 import d3tip from "d3-tip";
 import d3zoom from "d3-zoom";
-import util from "../util";
-import ScatterPlotHoverTemplate from "./html/ScatterPlotHoverLabel.html";
-import ChartLabelTemplate from "./html/chartTitle.html";
+import util from "../../util";
+import ScatterPlotHoverTemplate from "../html/ScatterPlotHoverLabel.html";
+import ChartLabelTemplate from "../html/chartTitle.html";
 import BaseChart from "./BaseChart";
 
 let ScatterPlot = BaseChart.extend({
