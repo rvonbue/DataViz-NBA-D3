@@ -1,7 +1,7 @@
 .NBA-circles-container {
   display: inline-block;
   vertical-align: top;
-  width: 655px;
+  width: 685px;
   margin-left: 30px;
 }
 
@@ -21,4 +21,11 @@
     position: relative;
   }
 	/* width and height can be anything, as long as they're equal */
+}
+.circle.team-selector {
+  margin: 3px 1px;
+  .BoxShadowHelper(3);
+  &:hover {
+    .BoxShadowHelper(4);
+  }
 }

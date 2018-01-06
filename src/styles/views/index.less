@@ -39,11 +39,16 @@
 .chart-label {
   .no-select;
   cursor: pointer;
+
   &.selected {
      .BoxShadowHelper(5);
      border-bottom: 5px solid @color-4;
   }
+  &:hover {
+     .BoxShadowHelper(4);
+  }
 }
+
 .chart.toggleSVG {
   .chart-layout-container {
     display: none;
@@ -55,4 +60,17 @@
 .chart-label-container {
   display: inline-block;
   margin-top: 0px;
+}
+.options-container{
+  position: absolute;
+  text-align: center;
+  top: 0px;
+  left: 0px;
+}
+.options-icon {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  background: url(../sprites/ic_settings_applications_black_48px.svg);
+  cursor: pointer;
 }

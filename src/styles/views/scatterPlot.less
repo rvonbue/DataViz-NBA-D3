@@ -6,10 +6,25 @@
   // width: 100%;
   vertical-align: top;
 
-}
-.options-container {
-  width: 90px;
-  left: 80px;
+  .options-container {
+    left: 80px;
+    .no-select;
+    &.show {
+      .dropdown {
+        display: inline-block;
+      }
+    }
+  }
+
+  .dropdown {
+    display: none;
+    vertical-align: top;
+    .no-select;
+  }
+  .dropbtn {
+    padding: 8px;
+    display: inline-block;
+  }
 }
 .domain {
   stroke: #000;
@@ -33,10 +48,10 @@ text.label {
    font-size:15px;
 }
 .circleH {
-    &:hover {
-      cursor: pointer;
-      fill: #3380FF !important;
-    }
+  &:hover {
+    cursor: pointer;
+    fill: #3380FF !important;
+  }
 }
 
 .d3-tip {
@@ -66,4 +81,10 @@ span.player-name {
 
   padding: 8px 4px;
   text-align: center;
+}
+.stat-list {
+  border-bottom: 1px solid @black;
+  &:nth-child(odd) {
+    // background-color: @colorAllies;
+  }
 }

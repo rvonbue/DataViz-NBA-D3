@@ -13,11 +13,14 @@ let ScatterPlot = BaseChart.extend({
   label: "Scatter Plot",
   description: "3-point Shooting",
   events: {
-    "click .stat-list": "clickStatList"
+    "click .stat-list.main-stat": "clickStatList",
+    "click .options-icon": "showHideOptions",
+    "click .stat-list.playerNum": "clickPlayerNum"
   },
   initialize: function(){
-     _.bindAll(this, "clickStatList", "highlightNode", "unhighlightNode");
+     _.bindAll(this, "clickStatList", "clickPlayerNum", "highlightNode", "unhighlightNode");
      this.margin = { top: 20, right: 20, bottom: 50, left: 60, textTop: 10, textLeft: 0 };
+     this.totalPlayerNum = 50;
      this.statList = {
        threePoint: {
          sortBy: "fg3mRank",
@@ -81,46 +84,42 @@ let ScatterPlot = BaseChart.extend({
     this.animate();
     this.addListeners();
   },
+  showHideOptions: function () {
+    this.optionsEl.toggleClass("show")
+  },
   clickStatList: function (el) {
     let text = $(el.currentTarget).text();
-
     this.statName = text;
     this.data = this.getData();
-    // this.data = data;
-
-    console.log("this.data", this.data);
-
-    this.svg
-      .selectAll("g, text")
-      .data([])
-      .exit().remove();
-
-    this.svg
-      .attr("width", this.size.w)
-      .attr("height", this.size.h);
-
+    this.clearRebuild();
+  },
+  clickPlayerNum: function (el) {
+    let number = Number($(el.currentTarget).text());
+    this.totalPlayerNum = number;
+    this.data = this.getData();
+    this.clearRebuild();
+  },
+  clearRebuild: function () {
+    this.clearSvg();
     this.buildChart();
     this.animate();
   },
   getData: function () {
-    return commandController.request(commandController.GET_DATA_PLAYERS_BY_STAT, this.statList[this.statName].sortBy, 50);
+    return commandController.request(commandController.GET_DATA_PLAYERS_BY_STAT, this.statList[this.statName].sortBy, this.totalPlayerNum);
   },
   resize: function (resize) {
     this.size =  { w: resize.width, h: resize.height };
-    this.clearSvg();
-
-    this.svg
-      .attr("width", this.size.w)
-      .attr("height", this.size.h);
-
-    this.buildChart();
-    this.animate();
+    this.clearRebuild();
   },
   clearSvg: function () {
     this.svg
       .selectAll("g, text")
       .data([])
       .exit().remove();
+
+    this.svg
+      .attr("width", this.size.w)
+      .attr("height", this.size.h);
   },
   getScaleX: function (simpleData, propKey) {
     let xMax = _.max(simpleData, function(d){ return d[propKey]; });
@@ -260,9 +259,9 @@ let ScatterPlot = BaseChart.extend({
   },
   addAxesX: function (label) {
     let axisGX = this.svg.append("g")
-        .attr("class", "axisX")
-        .attr("fill", "#000000")
-        .attr("transform", "translate(0," + (this.size.h - this.margin.bottom) + ")");
+      .attr("class", "axisX")
+      .attr("fill", "#000000")
+      .attr("transform", "translate(0," + (this.size.h - this.margin.bottom) + ")");
 
     axisGX
       .append("rect")
@@ -317,7 +316,8 @@ let ScatterPlot = BaseChart.extend({
   },
   render: function () {
     BaseChart.prototype.render.apply(this, arguments);
-    this.$el.prepend(OptionsTemplate({ statList: this.statList }));
+    this.optionsEl = $(OptionsTemplate({ statList: this.statList }));
+    this.$el.prepend(this.optionsEl[0]);
     return this;
   }
 });
