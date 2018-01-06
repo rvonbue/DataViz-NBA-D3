@@ -5,9 +5,10 @@ import ChartLabelTemplate from "./html/chartTitle.html";
 window.NBA = NBA;
 import util from "../util.js";
 import DataParserLoader from "../models/DataParser";
+import NBACircles from "./nbaCircles";
 import ScatterPlot from "./charts/ScatterPlot";
 import Sunburst from "./charts/Sunburst";
-import BarChart from "./charts/BarChart";
+import BarChartInteractive from "./charts/BarChartInteractive";
 
 let StatControllerView = Backbone.View.extend({
   id: "stat-view",
@@ -19,7 +20,7 @@ let StatControllerView = Backbone.View.extend({
     this.childViews = [
       new Sunburst(),
       new ScatterPlot(),
-      new BarChart()
+      new BarChartInteractive()
     ];
 
     this.DataParserLoader = new DataParserLoader();
@@ -43,23 +44,6 @@ let StatControllerView = Backbone.View.extend({
     this.chartLayoutContainerEl.height(resize.height);
     return resize;
   },
-  // getPlayerStats: function () {
-  //   let self = this;
-  //
-  //   NBA.stats.playerStats().then(function (res, err) {
-  //       self.dataLoaded(res);
-  //   });
-  // },
-  // dataLoaded: function (dataDump) {
-  //   this.data = dataDump;
-  //   util.buildTeamColors();
-  //   this.start();
-  // },
-  loadChart: function (simpleData) {
-    // this.loadScatterPlot(this.data);
-    // this.loadSunburst();
-    this.startCharts();
-  },
   buildChartLabels: function () {
     this.childViews.forEach( view => { this.chartLabelContainerEl.append(ChartLabelTemplate(view)); });
   },
@@ -76,15 +60,7 @@ let StatControllerView = Backbone.View.extend({
   },
   firstRender: function () {
     this.chartLayoutContainerEl.append(this.selectedView.render().el);          //append chart container
-
-    // let dataLoadFunc = this.selectedView.dataLoadFunc;
-    // let data = this.DataParserLoader[dataLoadFunc]();
-    //
-    // console.log("Data::", data);
-    // if ( data ) {    //check if data is available
-      this.selectedView.start();
-    // }
-
+    this.selectedView.start();
   },
   setSelectedChart: function (index, currentTarget) {
     this.selectedView = this.childViews[index];
@@ -99,9 +75,13 @@ let StatControllerView = Backbone.View.extend({
   render: function () {
     this.chartLayoutContainerEl = $("<div class='stat-view-container'></div>");
     this.chartLabelContainerEl = $("<div class='chart-label-container'></div>");
-    this.$el.append(this.chartLabelContainerEl);
+    // this.$el.append(this.chartLabelContainerEl);
     this.$el.append(this.chartLayoutContainerEl);
-
+    this.headerEl = $("<div class='header'></div>");
+    this.headerEl.append("<div class='title-banner'>NBA Stats with d3js v4</div>");
+    this.headerEl.append(this.chartLabelContainerEl);
+    this.headerEl.append(new NBACircles().render().el);
+    this.$el.prepend(this.headerEl);
     return this;
   }
 });

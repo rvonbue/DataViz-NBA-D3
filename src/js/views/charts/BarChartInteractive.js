@@ -5,6 +5,7 @@ import d3zoom from "d3-zoom";
 import util from "../../util";
 import ScatterPlotHoverTemplate from "../html/ScatterPlotHoverLabel.html";
 import BaseChart from "./BaseChart";
+import HoverTemplate from "../html/HoverBarChartTeamAge.html";
 
 let BarChart = BaseChart.extend({
   className: BaseChart.prototype.className + " bar-chart",
@@ -13,21 +14,52 @@ let BarChart = BaseChart.extend({
   initialize: function(){
      this.margin = { top: 50, right: 20, bottom: -60, left: 60, textTop: 10, textLeft: 0, textBottom: 25 };
    },
+  addListeners: function () {
+    eventController.on(eventController.TEAM_SELECTOR_ENTER, (d) => { return this.teamSelectEnter(d)});
+    eventController.on(eventController.TEAM_SELECTOR_EXIT, (d) => { return this.teamSelectExit(d)});
+  },
   start: function () {
-    this.data = this.getData();
+    this.getData();
     this.size = this.setSize();
 
-    // console.log("DATA:::", this.data);
-    this.fData = {
-      ageCount: _.map(this.data.ageObj, (d, i) => Number(d)),
-      ageRange: _.map(this.data.ageObj, (d, i) => Number(i))
-    };
     this.createSvg();
     this.buildChart();
     this.animate();
+    this.addListeners();
+  },
+  teamSelectEnter: function (teamAbbreviation) {
+    let team = _.findWhere(this.fData.teams, { abbreviation: teamAbbreviation });
+    let age = _.reduce(team.players, (memo, player)=> { return memo + player.age; }, 0);
+    age = Math.round((age / team.players.length) * 10) / 10;
+
+    this.averageAgeEl.empty()
+    .stop()
+    .animate({opacity: 1}, 250)
+    .append(HoverTemplate({
+       age: age,
+       colors: util.teamColors[teamAbbreviation],
+       team: teamAbbreviation
+     }))
+    .css({
+      backgroundColor: util.teamColors[teamAbbreviation][0],
+      border: `2px solid ${util.teamColors[teamAbbreviation][1]}`,
+      color: util.getTextColor(null, util.teamColors[teamAbbreviation][0])
+    });
+
+  },
+  teamSelectExit: function () {
+    this.averageAgeEl.stop().animate({opacity: 0}, 500);
   },
   getData: function () {
-    return commandController.request(commandController.GET_DATA_AGE);
+    this.data = commandController.request(commandController.GET_DATA_AGE);
+
+    this.fData = {
+      ageCount: _.map(this.data.ageObj, (d, i) => Number(d)),
+      ageRange: _.map(this.data.ageObj, (d, i) => Number(i)),
+      teams: this.data.teams
+    };
+
+    return this.data;
   },
   resize: function (resize) {
     this.size = this.setSize();
@@ -56,11 +88,11 @@ let BarChart = BaseChart.extend({
   },
   buildChart: function () {
     let y = this.viewScaleY = this.getScaleY();
-    this.textScale = d3.scaleLinear().domain([400, 1900]).range([40,100])
+    this.textScale = d3.scaleLinear().domain([400, 1900]).range([40,100]) // screen width 400 x 1900 range 40 to 100%
     this.scaleColor = this.getScaleColor();
     let barWidth = (this.size.width - (this.margin.left + this.margin.right)) / this.fData.ageRange.length;
 
-    console.log("this.fData.ageCount", this.fData.ageCount);
+    console.log("this.fData", this.fData);
     let group = this.svg.selectAll("g")
 			.data(this.fData.ageCount)
 			.enter()
@@ -149,6 +181,9 @@ let BarChart = BaseChart.extend({
   },
   render: function () {
     BaseChart.prototype.render.apply(this, arguments);
+    this.averageAgeEl = $("<div class='average-age-highlight'></div>");
+    this.averageAgeEl.append(HoverTemplate({ age: 25.2 }));
+    this.el.append(this.averageAgeEl[0]);
     return this;
   }
 });

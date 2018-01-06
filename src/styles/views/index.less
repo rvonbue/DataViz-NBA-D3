@@ -1,6 +1,7 @@
 @import "sunburst.less";
 @import "scatterPlot.less";
 @import "barChart.less";
+@import "nbaCircles.less";
 
 #stat-view {
   height: ~"calc(100% - @{bannerHeight})";
@@ -9,11 +10,16 @@
   display: block;
   margin: 0px 50px;
 }
+.header {
+  height: 100px;
+  margin: 6px 0px;
+}
 .title-banner {
+  display: inline-block;
   font-size: 30px;
-  padding-left: 75px;
-  height: @bannerHeight;
-  line-height: @bannerHeight;
+  padding-top: 10px;
+  line-height: 30px;
+  max-width: 200px;
 }
 .chart {
   display: inline-block;
@@ -47,5 +53,6 @@
   }
 }
 .chart-label-container {
-  display: block;
+  display: inline-block;
+  margin-top: 0px;
 }

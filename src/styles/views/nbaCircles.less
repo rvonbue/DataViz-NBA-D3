@@ -1,0 +1,24 @@
+.NBA-circles-container {
+  display: inline-block;
+  vertical-align: top;
+  width: 655px;
+  margin-left: 30px;
+}
+
+.circle {
+  display: inline-block;
+  cursor: pointer;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+  font-size: 12px;
+
+  &:after {
+    content: attr(data-team);
+    line-height: 5px;
+    left: 5px;
+    top: 10px;
+    position: relative;
+  }
+	/* width and height can be anything, as long as they're equal */
+}

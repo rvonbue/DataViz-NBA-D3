@@ -8,7 +8,7 @@ import BaseChart from "./BaseChart";
 
 let BarChart = BaseChart.extend({
   className: BaseChart.prototype.className + " bar-chart",
-  label: "Bar Chart",
+  label: "Force Directed",
   description: "NBA Age",
   initialize: function(){
      this.margin = { top: 50, right: 20, bottom: -60, left: 60, textTop: 10, textLeft: 0, textBottom: 25 };
@@ -17,11 +17,11 @@ let BarChart = BaseChart.extend({
     this.data = this.getData();
     this.size = this.setSize();
 
-    // console.log("DATA:::", this.data);
     this.fData = {
-      ageCount: _.map(this.data.ageObj, (d, i) => Number(d)),
-      ageRange: _.map(this.data.ageObj, (d, i) => Number(i))
+      ageCount: _.map(this.data, (d, i) => Number(d)),
+      ageRange: _.map(this.data, (d, i) => Number(i))
     };
+
     this.createSvg();
     this.buildChart();
     this.animate();
@@ -46,8 +46,8 @@ let BarChart = BaseChart.extend({
   },
   getScaleY: function () {
     return d3.scaleLinear()
-      .domain([Math.max((d3.min(this.fData.ageCount) *.8), 0), d3.max(this.fData.ageCount) * 1.20])
-      .range([ this.size.height, 0 ]);
+      .domain([0, d3.max(this.fData.ageCount, function(d) { return d; })])
+      .range([ this.size.height, this.margin.top - this.margin.bottom ]);
   },
   getScaleColor: function () {
     return d3.scaleLinear()
@@ -60,11 +60,12 @@ let BarChart = BaseChart.extend({
     this.scaleColor = this.getScaleColor();
     let barWidth = (this.size.width - (this.margin.left + this.margin.right)) / this.fData.ageRange.length;
 
-    console.log("this.fData.ageCount", this.fData.ageCount);
     let group = this.svg.selectAll("g")
 			.data(this.fData.ageCount)
 			.enter()
       .append("g");
+
+
 
     this.addBars(group, barWidth);
     this.addTextSVG(group, barWidth, this.fData.ageRange);
@@ -91,9 +92,6 @@ let BarChart = BaseChart.extend({
         .attr("fill", "#FFFFFF")
         .attr("stroke", "#000000")
         .attr("transform", (d, i)=> { return `rotate(360)`; })
-  },
-  addTeamBars: function (group, barWidth) {
-
   },
   addTextSVG: function (g, barWidth) {
     g

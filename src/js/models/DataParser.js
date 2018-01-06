@@ -1,5 +1,6 @@
 import eventController from "../controllers/eventController";
 import commandController from "../controllers/commandController";
+import nbaTeams from "../data/nbaTeams";
 import util from "../util";
 window.util = util;
 
@@ -9,10 +10,10 @@ let DataParser = Backbone.Model.extend({
   },
   initialize: function () {
     util.buildTeamColors();
-    _.bindAll(this, "getTeamRosters", "getThreePointData");
     commandController.reply(commandController.GET_TEAM_ROSTERS, (d)=> this.getTeamRosters(d) );
     commandController.reply(commandController.GET_3POINT, ()=> this.getThreePointData() );
     commandController.reply(commandController.GET_DATA_AGE, ()=> this.getAgeData() );
+    commandController.reply(commandController.GET_DATA_PLAYERS_BY_STAT, (stat, num)=> this.getPlayersByStat(stat, num) );
   },
   start: function () {
     this.loadPlayerStats();
@@ -29,31 +30,20 @@ let DataParser = Backbone.Model.extend({
   playerStatsLoaded: function (dataDump) {
     let objKey = _.keys(dataDump);
     this.set("playerStats", dataDump[objKey]);
+    // console.log("Players", this.getPlayersByStat("minRank", 50));
   },
-  getThreePointData: function () {
+  getPlayersByStat: function (stat, num) {
     let playerStats = this.get("playerStats");
-    let sorted3pa = _.sortBy(playerStats, "fg3mRank");
+    playerStats.forEach( (d, i) => { if ( d.gpRank > 400 ) playerStats.splice(i, 1); });
 
-    sorted3pa.forEach( function (d, i) {
-      if ( d.gpRank > 300 ) sorted3pa.splice(i, 1);  // remove players who don't play alot of games
-    });
-
-    sorted3pa.length = 50;  // get top 30 players
-    let simpleData = [];
-    _.each(sorted3pa, function (player) {
-      simpleData.push(
-        {
-          playerName: player.playerName,
-          fG3A: player.fG3A,
-          fG3M: player.fG3M,
-          fg3Pct: player.fg3Pct,
-          fg3PctRank: player.fg3PctRank,
-          teamAbbreviation: player.teamAbbreviation
-        }
-      )
-    });
-    this.set("threePointData", simpleData );
-    return simpleData;
+    // let playersArr = [];
+    // _.each(stats, (stat)=> {
+      let playersArrTemp = _.sortBy(playerStats, stat);
+      playersArrTemp.length = num;
+      // playersArr.push(playersArrTemp);
+    // })
+    console.log("playersArrTemp", playersArrTemp);
+    return playersArrTemp;
   },
   getTeamRosters: function (teams) {
     let playerStats = this.get("playerStats");
@@ -90,8 +80,26 @@ let DataParser = Backbone.Model.extend({
         ageObj[player.age] = 1;
       }
     });
-    console.log("this.ageObj", ageObj);
-    return ageObj;
+
+
+    let teams = _.clone(nbaTeams);
+    teams = teams.map((obj) => {
+        obj.players = [];
+        return obj;
+    });
+
+    var teamObjIndex = teams.reduce(function(obj,item, i){
+      obj[item.abbreviation] = i;
+      return obj;
+    }, {});
+
+    _.each( this.get("playerStats"), function (player) {
+      teams[teamObjIndex[player.teamAbbreviation]].players.push(player);
+    });
+
+    console.log("this.teams", teams);
+    // console.log("this.this.get(playerStats)", this.get("playerStats"));
+    return {ageObj: ageObj, teams: teams };
   },
   getDataPoint: function (name, children, size) {
     return {

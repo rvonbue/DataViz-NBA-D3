@@ -1,2 +1,13 @@
-<span class="player-name" style="background-color: <%= color.fill %>; color: <%= color.text %>;border-bottom: 3px solid <%= color.stroke %>"><%= playerName %></span>
-<span><%= fG3M + " - " + fG3A %> / <%= Math.round( fg3Pct * 1000 ) / 10 %>%</span>
+<span class="player-name" style="background-color: <%= player.color.fill %>; color: <%= player.color.text %>;border-bottom: 3px solid <%= player.color.stroke %>">
+  <%= player.playerName %>
+</span>
+<span>
+  <% if (player[stats.x] < 1 ) { %>
+    <%= `${stats.x}: ${Math.round( player[stats.x] * 1000 ) / 10}` %>
+  <% } else { %>
+     <%= `${stats.x}: ${player[stats.x]}` %>
+  <% } %>
+</span>
+<span>
+  <%= `${stats.y}: ${player[stats.y]}` %>
+</span>
