@@ -16,16 +16,24 @@ let BarChart = BaseChart.extend({
    },
   addListeners: function () {
     eventController.on(eventController.TEAM_SELECTOR_ENTER, (d) => { return this.teamSelectEnter(d)});
-    eventController.on(eventController.TEAM_SELECTOR_EXIT, (d) => { return this.teamSelectExit(d)});
+    // eventController.on(eventController.TEAM_SELECTOR_EXIT, (d) => { return this.teamSelectExit(d)});
   },
   start: function () {
     this.getData();
     this.size = this.setSize();
-
+    this.resetAgeContainer();
     this.createSvg();
     this.buildChart();
     this.animate();
     this.addListeners();
+  },
+  resetAgeContainer: function () {
+    this.averageAgeEl.empty()
+    .append(HoverTemplate({
+       age: this.fData.averageAge,
+       colors: util.teamColors["GSW"],
+       team: "GSW"
+     }))
   },
   teamSelectEnter: function (teamAbbreviation) {
     let team = _.findWhere(this.fData.teams, { abbreviation: teamAbbreviation });
@@ -33,8 +41,6 @@ let BarChart = BaseChart.extend({
     age = Math.round((age / team.players.length) * 10) / 10;
 
     this.averageAgeEl.empty()
-    .stop()
-    .animate({opacity: 1}, 250)
     .append(HoverTemplate({
        age: age,
        colors: util.teamColors[teamAbbreviation],
@@ -47,9 +53,12 @@ let BarChart = BaseChart.extend({
     });
 
   },
-  teamSelectExit: function () {
-    this.averageAgeEl.stop().animate({opacity: 0}, 500);
-  },
+  // teamSelectExit: function () {
+  //   let self = this;
+  //   setTimeout( function () {
+  //     self.resetAgeContainer();
+  //   }, 500);
+  // },
   getData: function () {
     this.data = commandController.request(commandController.GET_DATA_AGE);
 
@@ -59,6 +68,19 @@ let BarChart = BaseChart.extend({
       teams: this.data.teams
     };
 
+    let ageCount = this.fData.ageCount;
+
+    let totalAge = _.reduce(this.fData.ageRange, function (memo, age, i) {
+      return memo + (age * ageCount[i]);
+    }, 0);
+
+    let totalPlayers = _.reduce(ageCount, function (memo, players) {
+      return memo + players;
+    }, 0);
+
+    this.fData.averageAge = Math.round((totalAge / totalPlayers) * 10) / 10;
+
+    console.log("this.fData.averageAge::", this.fData.averageAge);
     return this.data;
   },
   resize: function (resize) {

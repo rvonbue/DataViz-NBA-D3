@@ -3,8 +3,8 @@
   <div class="dropdown">
     <div class="dropbtn">Choose stats</div>
     <div class="dropdown-content style-1-scrollbar">
-      <% _.each(statList, function(team,i){  %>
-          <a class="stat-list main-stat" href="#"><%= i %></a>
+      <% _.each(statList, function(team, i){  %>
+          <a data-stat="<%= i %>" class="stat-list main-stat" href="#"><%= team.mainLabel %></a>
        <% }); %>
     </div>
   </div>

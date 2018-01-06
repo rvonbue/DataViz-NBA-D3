@@ -23,12 +23,15 @@ let ScatterPlot = BaseChart.extend({
      this.totalPlayerNum = 50;
      this.statList = {
        threePoint: {
+         mainLabel: "Three Point %",
          sortBy: "fg3mRank",
-         x: "fg3Pct", y: "fG3M",
+         x: "fg3Pct",
+         y: "fG3M",
          xLabel: "3-Point Percentage",
          yLabel: "3 Pointers Made"
        },
        rebounding: {
+         mainLabel: "Offensive / Defensive Rebounds",
          sortBy: "rebRank",
          x: "oreb",
          y: "dreb",
@@ -36,11 +39,20 @@ let ScatterPlot = BaseChart.extend({
          yLabel: "Defensive Rebounds"
        },
        defense: {
+         mainLabel: "Block / Steal",
          sortBy: "blkRank",
          x: "blk",
          y: "stl",
          xLabel: "Blocks/game",
          yLabel: "Steals/game"
+       },
+       plusMinus: {
+         mainLabel: "Plus Minus / Win Pct%",
+         sortBy: "plusMinusRank",
+         x: "plusMinus",
+         y: "wPct",
+         xLabel: "plusMinus",
+         yLabel: "wPct"
        }
      }
 
@@ -77,7 +89,6 @@ let ScatterPlot = BaseChart.extend({
   },
   start: function () {
     this.data = this.getData();
-    console.log("this.data", this.data);
     this.size = this.setSize();
     this.createSvg();
     this.buildChart();
@@ -88,7 +99,7 @@ let ScatterPlot = BaseChart.extend({
     this.optionsEl.toggleClass("show")
   },
   clickStatList: function (el) {
-    let text = $(el.currentTarget).text();
+    let text = $(el.currentTarget).data().stat;
     this.statName = text;
     this.data = this.getData();
     this.clearRebuild();
@@ -174,13 +185,15 @@ let ScatterPlot = BaseChart.extend({
         .attr("transform", d => { return this.getTranslation( d.initPos.x, d.initPos.y ); })
         .attr("opacity", 1)
   },
+  getCirleRadius: function () {
+    return Math.min((this.size.w /100), 10);
+  },
   animateCircleEnd: function () {
-    let r = Math.min((this.size.w / 90), 10);
 
     this.circleSVG
       .transition()
         .duration( (d) => { return this.getAnimationDuration(this.viewScaleX(d[this.statList[this.statName].x]) * 1.5); })
-        .attr("r", r)
+        .attr("r", this.getCirleRadius())
         .attr("opacity", 1)
         .style("fill",(d) => { return d.color.fill; })
         .style("stroke",(d) => { return d.color.stroke; })
@@ -194,10 +207,8 @@ let ScatterPlot = BaseChart.extend({
         .duration( (d) => { return 500; })
   },
   addShapeSVG: function (elemEnter) {
-    let r = Math.min((this.size.w / 90), 10);
-
     this.circleSVG = elemEnter.append("circle")
-      .attr("r", r )
+      .attr("r", this.getCirleRadius() )
       .attr("stroke", "#000000")
       .attr("class", (d)=> { return "circleH " + d.teamAbbreviation; })
       .style("stroke-width",1)
