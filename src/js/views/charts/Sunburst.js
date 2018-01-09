@@ -5,6 +5,7 @@ import SunburstOptionsTemplate from "./sunburst.html";
 import ChartLabelTemplate from "../html/chartTitle.html";
 import utils from "../../util";
 import teamNameTemplate from "../html/addTeamNameTemplate.html";
+import playerInfoTemplate from "../html/sunburstHoverTemplate.html";
 
 let Sunburst = BaseChart.extend({
   className: BaseChart.prototype.className + " sunburst",
@@ -14,7 +15,8 @@ let Sunburst = BaseChart.extend({
     "click .team-abbreviation-container": "destroyElRemoveTeam",
     "click .team-name": "clickSelectTeam",
     "click #load-teams": "resetChart",
-    "click .chart-label": "showHideChart"
+    "click .chart-label": "showHideChart",
+    // "click .click-catcher":
   },
   initialize: function (options) {
     _.bindAll(this, "destroyElRemoveTeam", "clickSelectTeam", "resetChart");
@@ -54,6 +56,7 @@ let Sunburst = BaseChart.extend({
     let dropDownEl = el.closest(".dropdown");
     let dropdownContentEl = dropDownEl.find(".dropdown-content")
                                       .addClass("pointer-events-none");
+
     let abbreviation = NBA.teams[el.index()].abbreviation;
 
     this.$el.find("#team-container").append(teamNameTemplate({
@@ -124,7 +127,7 @@ let Sunburst = BaseChart.extend({
   },
   formatDataD3: function (data) {
     let x = this.x,  y = this.y;
-
+    window.hello = this;
     this.partition = d3.partition();
     this.root = d3.hierarchy(data)  // Find the Root Node
        .sum(function(d) { return !d.children || d.children.length === 0 ? d.size : 0; }); // use 100% of arc
@@ -179,8 +182,7 @@ let Sunburst = BaseChart.extend({
   },
   click: function (d) {
     if (this.shouldCancelClick(d)) return; // If clicking on middle circle while zoomed out do nothing
-
-    let x = this.x, y = this.y, radius = this.size.radius, arc = this.arc;
+    console.log("shouldCancelClick")
     this.depth = d.depth;
     this.animating = true;
 
@@ -188,20 +190,25 @@ let Sunburst = BaseChart.extend({
       .attr("opacity", function (d) { return  0; });
 
     svgTextSelection = utils.getVisibleTextSelection(this.svg, d);
-    let popOutText = _.throttle( _.bind(this.popOutText, this), 100);
+
+    this.animateSunburstNewDepth(d, svgTextSelection);
+  },
+  animateSunburstNewDepth: function (d, svgTextSelection) {
+    let x = this.x, y = this.y, radius = this.size.radius, arc = this.arc;
+    let popOutText = _.bind(this.popOutText, this);
 
     this.svg.transition()
         .duration(750)
         .tween("scale", function() {
-          var xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
+          let xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
               yd = d3.interpolate(y.domain(), [d.y0, 1]),
               yr = d3.interpolate(y.range(), [d.y0 ? 20 : 0, radius]);
           return function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); };
         })
         .selectAll("path")
           .attrTween("d", function(d) { return function() { return arc(d); }; })
-          .on("end", (d, i )=> { popOutText(svgTextSelection) });
-
+          .filter((d,i)=> { return i === 0 })
+          .on("end", ()=> { this.popOutText(d, svgTextSelection) });
   },
   shouldCancelClick: function (d) {
     if (
@@ -210,11 +217,23 @@ let Sunburst = BaseChart.extend({
         this.animating === true) { return true; }  // am I still animating
     return false;
   },
-  popOutText: function (svgTextSelection) {
-    this.updateFirstRingText(svgTextSelection);
-    this.updateTextTransform(svgTextSelection);
-    this.updateTextAttrs(svgTextSelection);
-    this.animateText(svgTextSelection);
+  popOutText: function (d, svgTextSelection) {
+    // console.log("this.data", data);
+    // console.log("this.depth", this.depth);
+    // console.log("this.height", this.root.height);
+
+    if ( this.root.height === this.depth ) {
+      console.log("this.data",  d.data);
+      console.log("this.data",  d );
+      this.playerInfoEl.css({width: this.size.w }).addClass("active");
+      this.playerInfoEl.empty().append(playerInfoTemplate(d.data));
+    } else {
+      this.updateFirstRingText(svgTextSelection);
+      this.updateTextTransform(svgTextSelection);
+      this.updateTextAttrs(svgTextSelection);
+      this.animateText(svgTextSelection);
+    }
+
   },
   updateTextTransform: function (svgSelection) {
     svgSelection = svgSelection ? svgSelection : this.svg.selectAll("text");
@@ -271,6 +290,8 @@ let Sunburst = BaseChart.extend({
    render: function () {
      BaseChart.prototype.render.apply(this, arguments);
      this.$el.prepend(SunburstOptionsTemplate({ teamList: NBA.teams }));
+     this.playerInfoEl = $("<div class='click-catcher'></div>");
+     this.$el.append(this.playerInfoEl[0]);
      return this;
    }
 });

@@ -53,12 +53,12 @@ let BaseChart = Backbone.View.extend({
   getScaleX: function (simpleData, propKey) {
     let xMax = _.max(simpleData, function(d){ return d[propKey]; });
     let xMin = _.min(simpleData, function(d){ return d[propKey]; });
-    return d3.scaleLinear().domain([ xMin[propKey] * 0.95 , xMax[propKey] * 1.05 ]).range([ this.margin.left, this.size.w - this.margin.right ]);
+    return d3.scaleLinear().domain([ xMin[propKey] * 0.95 , xMax[propKey] * 1.05]).range([ this.margin.left, this.size.w - this.margin.right ]);
   },
   getScaleY: function (simpleData, propKey) {
     let xMax = _.max(simpleData, function(d){ return d[propKey]; }) ;
     let xMin = _.min(simpleData, function(d){ return d[propKey]; });
-    return d3.scaleLinear().domain([ xMax[propKey] * 1.2, 0 ]).range([ this.margin.top, this.size.h - this.margin.bottom ]);
+    return d3.scaleLinear().domain([ xMax[propKey] * 1.2, xMin]).range([ this.margin.top, this.size.h - this.margin.bottom ]);
   },
   getDragBehavior: function () {
     return d3.drag()

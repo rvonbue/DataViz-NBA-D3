@@ -63,6 +63,14 @@ let ScatterPlot = BaseChart.extend({
      eventController.on(eventController.TEAM_SELECTOR_ENTER, this.highlightNode);
      eventController.on(eventController.TEAM_SELECTOR_EXIT, this.unhighlightNode);
   },
+  start: function () {
+    this.data = this.getData();
+    this.size = this.setSize();
+    this.createSvg();
+    this.buildChart();
+    this.animate();
+    this.addListeners();
+  },
   highlightNode: function (teamAbbr) {
     this.svg.selectAll(`g.zoomPoint`)
     .filter(function(d) { return d.teamAbbreviation !== teamAbbr })
@@ -86,14 +94,6 @@ let ScatterPlot = BaseChart.extend({
     this.svg.selectAll(`g.zoomPoint.${teamAbbr}`)
       .selectAll("circle, text")
       .attr("transform","scale(1)");
-  },
-  start: function () {
-    this.data = this.getData();
-    this.size = this.setSize();
-    this.createSvg();
-    this.buildChart();
-    this.animate();
-    this.addListeners();
   },
   showHideOptions: function () {
     this.optionsEl.toggleClass("show")
@@ -135,12 +135,17 @@ let ScatterPlot = BaseChart.extend({
   getScaleX: function (simpleData, propKey) {
     let xMax = _.max(simpleData, function(d){ return d[propKey]; });
     let xMin = _.min(simpleData, function(d){ return d[propKey]; });
-    return d3.scaleLinear().domain([ xMin[propKey] * 0.95 , xMax[propKey] * 1.05 ]).range([ this.margin.left, this.size.w - this.margin.right ]);
+        xMin = xMin[propKey];
+        xMin > 0 ? xMin *=  0.9 : xMin *= 2;
+        xMax = xMax[propKey] * 1.05;
+
+    return d3.scaleLinear().domain([ xMin , xMax ]).range([ this.margin.left, this.size.w - this.margin.right ]);
   },
   getScaleY: function (simpleData, propKey) {
-    let xMax = _.max(simpleData, function(d){ return d[propKey]; }) ;
-    let xMin = _.min(simpleData, function(d){ return d[propKey]; });
-    return d3.scaleLinear().domain([ xMax[propKey] * 1.2, 0 ]).range([ this.margin.top, this.size.h - this.margin.bottom ]);
+    let yMax = _.max(simpleData, function(d){ return d[propKey]; });
+    let yMin = _.min(simpleData, function(d){ return d[propKey]; });
+
+    return d3.scaleLinear().domain([ yMax[propKey] * 1.2, 0 ]).range([ this.margin.top, this.size.h - this.margin.bottom ]);
   },
   buildChart: function () {
     this.viewScaleX = this.getScaleX(this.data, this.statList[this.statName].x);

@@ -2,7 +2,7 @@
   <%= player.playerName %>
 </span>
 <span>
-  <% if (player[stats.x] < 1 ) { %>
+  <% if (player[stats.x] < 1 && player[stats.x] > 0) { %>
     <%= `${stats.x}: ${Math.round( player[stats.x] * 1000 ) / 10}` %>
   <% } else { %>
      <%= `${stats.x}: ${player[stats.x]}` %>
