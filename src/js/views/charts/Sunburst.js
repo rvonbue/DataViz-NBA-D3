@@ -16,7 +16,7 @@ let Sunburst = BaseChart.extend({
     "click .team-name": "clickSelectTeam",
     "click #load-teams": "resetChart",
     "click .chart-label": "showHideChart",
-    // "click .click-catcher":
+    "click .click-catcher": "closePlayer"
   },
   initialize: function (options) {
     _.bindAll(this, "destroyElRemoveTeam", "clickSelectTeam", "resetChart");
@@ -181,6 +181,8 @@ let Sunburst = BaseChart.extend({
     this.updateTextAttrs(svgText);
   },
   click: function (d) {
+    console.log("shouldCancelClick d", d.depth);
+    console.log("shouldCancelClick d", this.depth);
     if (this.shouldCancelClick(d)) return; // If clicking on middle circle while zoomed out do nothing
     console.log("shouldCancelClick")
     this.depth = d.depth;
@@ -217,16 +219,17 @@ let Sunburst = BaseChart.extend({
         this.animating === true) { return true; }  // am I still animating
     return false;
   },
+  closePlayer: function () {
+    this.playerInfoEl.empty().removeClass("active");
+    this.click(this.selectedNode.parent);
+  },
   popOutText: function (d, svgTextSelection) {
-    // console.log("this.data", data);
-    // console.log("this.depth", this.depth);
-    // console.log("this.height", this.root.height);
 
     if ( this.root.height === this.depth ) {
-      console.log("this.data",  d.data);
-      console.log("this.data",  d );
-      this.playerInfoEl.css({width: this.size.w }).addClass("active");
+      this.playerInfoEl.css({width: this.size.w + 100}).addClass("active");
       this.playerInfoEl.empty().append(playerInfoTemplate(d.data));
+      this.selectedNode = d;
+      this.animating = false;
     } else {
       this.updateFirstRingText(svgTextSelection);
       this.updateTextTransform(svgTextSelection);
